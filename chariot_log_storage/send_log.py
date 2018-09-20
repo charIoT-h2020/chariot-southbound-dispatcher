@@ -16,10 +16,11 @@ def on_log(client, userdata, level, buf):
 
 # Initialize connection to southbound
 broker = '172.18.1.2'
-consumer = mqtt.Client('chariot_log_storage')
+consumer = mqtt.Client('chariot_log_storage_demo')
 consumer.connect(broker)
 
 consumer.on_log = on_log
 consumer.on_message = on_message
 
 consumer.publish('storage/urn:ngsi-ld:temp:001', '0')
+consumer.loop_start()
