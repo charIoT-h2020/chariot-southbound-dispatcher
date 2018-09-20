@@ -10,7 +10,7 @@ services:
     volumes:
        - ./influxdb.conf:/etc/influxdb/influxdb.conf
     networks:
-      service_network:
+      default:
         ipv4_address: 172.18.1.4
         aliases:
           - redis.service
