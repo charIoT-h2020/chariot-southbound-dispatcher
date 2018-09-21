@@ -1,31 +1,47 @@
 # -*- coding: utf-8 -*-
-import base64
+from influxdb import InfluxDBClient
 
-import paho.mqtt.client as mqtt
+import datetime
 
-mqtt.Client.connected_flag = False
-
-
-def on_message(client, userdata, message):
-    print("(%s) message received(%s): %s  " % (message.topic, message.retain, message.payload.decode("utf-8")))
-    if message.retain == 1:
-        print("This is a retained message")
+from consumer import Client
 
 
-def on_log(client, userdata, level, buf):
-    print("log: ", buf)
+class MessageLogger(Client):
+
+    @staticmethod
+    def on_message(client, userdata, message):
+        print("(%s) message received(%s): %s  " % (message.topic, message.retain, message.payload.decode("utf-8")))
+        json_body = [
+            {
+                "measurement": "value",
+                "tags": {
+                    "topic": "storage/urn:ngsi-ld:temp:001"
+                },
+                "time": datetime.datetime.now().isoformat(),
+                "fields": {
+                    "value": message.payload.decode("utf-8")
+                }
+            }
+        ]
+        db = InfluxDBClient('localhost', 8086, 'root', 'root', 'example')
+        db.write_points(json_body)
+        if message.retain == 1:
+            print("This is a retained message")
+
+    @staticmethod
+    def on_log(client, userdata, level, buf):
+        print("log: ", buf)
 
 
-# Initialize connection to southbound
-broker = '172.18.1.2'
-consumer = mqtt.Client('chariot_log_storage')
-consumer.connect(broker)
+if __name__ == '__main__':
+    # Initialize connection to southbound
+    broker = '172.18.1.2'
+    client_id = 'chariot_log_storage'
 
-consumer.on_log = on_log
-consumer.on_message = on_message
+    logger = MessageLogger(client_id, broker)
 
-consumer.subscribe([
-    ('storage/#', 0)
-])
+    logger.subscribe([
+        ('dispatcher/#', 0)
+    ])
 
-consumer.loop_forever()
+    logger.start()
