@@ -10,20 +10,21 @@ class MessageLogger(Client):
 
     @staticmethod
     def on_message(client, userdata, message):
-        print("(%s) message received(%s): %s  " % (message.topic, message.retain, message.payload.decode("utf-8")))
+        msg, severity = message.payload.decode("utf-8").split(',')
         json_body = [
             {
-                "measurement": "value",
+                "measurement": "alert",
                 "tags": {
-                    "topic": "storage/urn:ngsi-ld:temp:001"
+                    "topic": "urn:ngsi-ld:temp:001"
                 },
                 "time": datetime.datetime.now().isoformat(),
                 "fields": {
-                    "value": message.payload.decode("utf-8")
+                    "severity": severity,
+                    "msg": msg
                 }
             }
         ]
-        db = InfluxDBClient('localhost', 8086, 'root', 'root', 'fog_logs')
+        db = InfluxDBClient('localhost', 8086, 'root', 'root', 'fog_alerts')
         db.write_points(json_body)
         if message.retain == 1:
             print("This is a retained message")
@@ -34,14 +35,14 @@ class MessageLogger(Client):
 
 
 if __name__ == '__main__':
-    # Initialize connection to southbound
-    broker = '172.18.1.2'
-    client_id = 'chariot_log_storage'
+    # Initialize connection to northbound
+    broker = '172.18.1.3'
+    client_id = 'chariot_log_alert'
 
     logger = MessageLogger(client_id, broker)
 
     logger.subscribe([
-        ('dispatcher/#', 0)
+        ('alerts/#', 0)
     ])
 
     logger.start()
