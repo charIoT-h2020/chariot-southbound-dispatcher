@@ -13,7 +13,8 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'paho-mqtt',
-    'influxdb'
+    'influxdb',
+    'ibmiotf'
 ]
 
 setup_requirements = [ ]

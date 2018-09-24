@@ -1,30 +1,42 @@
 # -*- coding: utf-8 -*-
 from influxdb import InfluxDBClient
 
+import json
 import datetime
 
 from consumer import Client
+from connector import IOTPConnector
+
+
+connector = IOTPConnector()
 
 
 class MessageLogger(Client):
+    def __init__(self, client_od, mqtt_broker):
+        super(MessageLogger, self).__init__(client_od, mqtt_broker)
 
     @staticmethod
     def on_message(client, userdata, message):
-        print("(%s) message received(%s): %s  " % (message.topic, message.retain, message.payload.decode("utf-8")))
+        msg = message.payload.decode("utf-8")
+        print("(%s) message received(%s): %s  " % (message.topic, message.retain, msg))
+
+        decoded_msg = json.loads(msg)
+
         json_body = [
             {
                 "measurement": "value",
                 "tags": {
-                    "topic": "storage/urn:ngsi-ld:temp:001"
+                    "topic": message.topic,
+                    "id": "urn:ngsi-ld:gateway_5410ec4d1601"
                 },
                 "time": datetime.datetime.now().isoformat(),
-                "fields": {
-                    "value": message.payload.decode("utf-8")
-                }
+                "fields": decoded_msg["d"]
             }
         ]
         db = InfluxDBClient('localhost', 8086, 'root', 'root', 'fog_logs')
         db.write_points(json_body)
+
+        connector.push_data(decoded_msg['d'])
         if message.retain == 1:
             print("This is a retained message")
 
@@ -41,7 +53,8 @@ if __name__ == '__main__':
     logger = MessageLogger(client_id, broker)
 
     logger.subscribe([
-        ('dispatcher/#', 0)
+        ('dispatcher/#', 0),
+        ('iot-2/evt/nms_status/fmt/json', 1)
     ])
 
     logger.start()
