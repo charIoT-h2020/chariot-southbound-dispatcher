@@ -22,6 +22,11 @@ Python Boilerplate contains all the boilerplate you need to create a Python pack
 * Free software: Eclipse Public License 1.0
 * Documentation: https://chariot-log-storage.readthedocs.io.
 
+Build docker images
+--------
+
+docker build --tag chariot_fog_storage_logs - < Dockerfile.logs
+docker build --tag chariot_fog_storage_alert - < Dockerfile.alerts
 
 Features
 --------

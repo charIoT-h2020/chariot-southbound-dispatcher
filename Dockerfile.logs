@@ -1,0 +1,9 @@
+FROM python:3.6-alpine
+
+WORKDIR /usr/src/app
+
+# Bundle app source
+COPY . .
+
+RUN python setup.py install
+CMD ["logs"]
