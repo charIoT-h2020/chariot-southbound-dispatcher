@@ -1,31 +1,21 @@
 # -*- coding: utf-8 -*-
-from influxdb import InfluxDBClient
-
 import datetime
 
-from consumer import Client
+from influxdb import InfluxDBClient
+from connector import LocalConnector
+from datasource import LocalDataSource, DataPoint
 
 
-class MessageLogger(Client):
+local_storage = LocalDataSource()
+
+
+class MessageLogger(LocalConnector):
 
     @staticmethod
     def on_message(client, userdata, message):
-        msg, severity = message.payload.decode("utf-8").split(',')
-        json_body = [
-            {
-                "measurement": "alert",
-                "tags": {
-                    "topic": "urn:ngsi-ld:temp:001"
-                },
-                "time": datetime.datetime.now().isoformat(),
-                "fields": {
-                    "severity": severity,
-                    "msg": msg
-                }
-            }
-        ]
-        db = InfluxDBClient('localhost', 8086, 'root', 'root', 'fog_alerts')
-        db.write_points(json_body)
+        point = DataPoint('fog_logs', 'alerts', message)
+        local_storage.publish(point)
+
         if message.retain == 1:
             print("This is a retained message")
 

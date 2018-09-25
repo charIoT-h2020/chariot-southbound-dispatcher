@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from consumer import Client
+from chariot_log_storage.chariot_log_storage.connector.local import LocalConnector
 
 
-class MessageGenerator(Client):
+class MessageGenerator(LocalConnector):
     @staticmethod
     def on_log(client, userdata, level, buf):
         print("log: ", buf)

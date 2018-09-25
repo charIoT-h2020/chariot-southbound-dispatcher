@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 mqtt.Client.connected_flag = False
 
 
-class Client(object):
+class LocalConnector(object):
     def __init__(self, client_od, broker):
         self.consumer = mqtt.Client(client_od)
         self.consumer.connect(broker)

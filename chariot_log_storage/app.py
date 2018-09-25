@@ -1,42 +1,25 @@
 # -*- coding: utf-8 -*-
-from influxdb import InfluxDBClient
-
-import json
-import datetime
-
-from consumer import Client
-from connector import IOTPConnector
+from connector import WatsonConnector, LocalConnector
+from datasource import LocalDataSource, DataPoint
 
 
-connector = IOTPConnector()
+connector = WatsonConnector()
+local_storage = LocalDataSource()
 
 
-class MessageLogger(Client):
+class MessageLogger(LocalConnector):
     def __init__(self, client_od, mqtt_broker):
         super(MessageLogger, self).__init__(client_od, mqtt_broker)
 
     @staticmethod
     def on_message(client, userdata, message):
-        msg = message.payload.decode("utf-8")
-        print("(%s) message received(%s): %s  " % (message.topic, message.retain, msg))
+        point = DataPoint('fog_logs', 'message', message, 'd')
 
-        decoded_msg = json.loads(msg)
+        print("(%s) message received(%s): %s" % (message.topic, message.retain, point.message))
 
-        json_body = [
-            {
-                "measurement": "value",
-                "tags": {
-                    "topic": message.topic,
-                    "id": "urn:ngsi-ld:gateway_5410ec4d1601"
-                },
-                "time": datetime.datetime.now().isoformat(),
-                "fields": decoded_msg["d"]
-            }
-        ]
-        db = InfluxDBClient('localhost', 8086, 'root', 'root', 'fog_logs')
-        db.write_points(json_body)
+        local_storage.publish(point)
+        connector.publish('message', point)
 
-        connector.push_data(decoded_msg['d'])
         if message.retain == 1:
             print("This is a retained message")
 
