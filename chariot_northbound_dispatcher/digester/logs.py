@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
+import json
+
 from ..connector import WatsonConnector, LocalConnector
 from ..datasource import LocalDataSource, DataPoint
 
@@ -16,6 +18,8 @@ class LogDigester(LocalConnector):
         print("(%s) message received(%s): %s" % (message.topic, message.retain, point.message))
 
         self.local_storage.publish(point)
+        point.message['timestamp'] = point.timestamp
+        self.publish('engine/privacy', json.dumps(point.message))
         # self.connector.publish(point)
 
     def on_log(self, client, userdata, level, buf):

@@ -1,4 +1,3 @@
-import datetime
 from multiprocessing import Process
 
 import ibmiotf.gateway
@@ -26,6 +25,5 @@ class WatsonConnector(Process):
         :param point: point
         :return:
         """
-        point.message['timestamp'] = datetime.datetime.now().isoformat()
         self.iot_client.publishGatewayEvent(event=point.table, msgFormat="json", data=point.message)
 
