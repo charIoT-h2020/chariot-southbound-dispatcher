@@ -19,7 +19,7 @@ Chariot Log Storage
 Python Boilerplate contains all the boilerplate you need to create a Python package.
 
 
-* Free software: ISC license
+* Free software: Eclipse Public License 1.0
 * Documentation: https://chariot-log-storage.readthedocs.io.
 
 
