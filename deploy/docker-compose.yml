@@ -5,6 +5,7 @@ services:
     restart: always
     image: influxdb:1.5.4-alpine
     hostname: influxdb_service
+    container_name: chariot.database
     ports:
       - "8086:8086"
     volumes:
@@ -19,6 +20,7 @@ services:
     restart: always
     image: chariot_fog_storage_alerts
     hostname: chariot_fog_storage_alerts
+    container_name: chariot.alerts.digester
     networks:
       default:
         ipv4_address: 172.18.1.5
@@ -29,6 +31,7 @@ services:
     restart: always
     image: chariot_fog_storage_logs
     hostname: chariot_fog_storage_logs
+    container_name: chariot.logs.digester
     networks:
       default:
         ipv4_address: 172.18.1.6
