@@ -38,23 +38,23 @@ setup(
     license="EPL-1.0",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    keywords='chariot_log_storage',
-    name='chariot_log_storage',
+    keywords='chariot_southbound_dispatcher',
+    name='chariot_southbound_dispatcher',
     packages=find_packages(include=[
-        'chariot_log_storage',
-        'chariot_log_storage.*'
+        'chariot_southbound_dispatcher',
+        'chariot_southbound_dispatcher.*'
     ]),
     entry_points={
           'console_scripts': [
-              'logs = chariot_log_storage.digester.logs:main',
-              'alerts = chariot_log_storage.digester.alerts:main'
+              'logs = chariot_southbound_dispatcher.digester.logs:main',
+              'alerts = chariot_southbound_dispatcher.digester.alerts:main'
           ]
     },
     scripts=['scripts/send_alert.py', 'scripts/send_log.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/theofilis/chariot_log_storage',
+    url='https://github.com/theofilis/chariot_southbound_dispatcher',
     version='0.1.0',
     zip_safe=False,
 )
