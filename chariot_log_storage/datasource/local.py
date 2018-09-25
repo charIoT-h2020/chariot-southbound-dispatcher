@@ -5,7 +5,7 @@ from influxdb import InfluxDBClient
 class LocalDataSource(object):
 
     def __init__(self):
-        self.db = InfluxDBClient('localhost', 8086, 'root', 'root', 'fog_logs')
+        self.db = InfluxDBClient('172.18.1.4', 8086, 'root', 'root', 'fog_logs')
 
     def publish(self, point):
         json_body = [
