@@ -26,7 +26,7 @@ Build docker images
 --------
 
 docker build -f Dockerfile.logs --tag chariot_southbound_dispatcher .
-docker build -f Dockerfile.alerts --tag chariot_fog_storage_alerts .
+docker build -f Dockerfile.alerts --tag chariot_southbound_dispatcher_alerts .
 
 Features
 --------
