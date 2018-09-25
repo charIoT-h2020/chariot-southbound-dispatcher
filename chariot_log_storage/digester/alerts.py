@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
-from chariot_log_storage.chariot_log_storage.connector import LocalConnector
-from chariot_log_storage.chariot_log_storage.datasource import LocalDataSource, DataPoint
+from ..connector import LocalConnector
+from ..datasource import LocalDataSource, DataPoint
 
 
 local_storage = LocalDataSource()
