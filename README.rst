@@ -25,8 +25,8 @@ Python Boilerplate contains all the boilerplate you need to create a Python pack
 Build docker images
 --------
 
-docker build --tag chariot_fog_storage_logs - < Dockerfile.logs
-docker build --tag chariot_fog_storage_alert - < Dockerfile.alerts
+docker build -f Dockerfile.logs --tag chariot_fog_storage_logs .
+docker build -f Dockerfile.alerts --tag chariot_fog_storage_alerts .
 
 Features
 --------
