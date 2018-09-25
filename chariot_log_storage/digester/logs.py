@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-from connector import WatsonConnector, LocalConnector
-from datasource import LocalDataSource, DataPoint
-
+import uuid
+from chariot_log_storage.chariot_log_storage.connector import WatsonConnector, LocalConnector
+from chariot_log_storage.chariot_log_storage.datasource import LocalDataSource, DataPoint
 
 connector = WatsonConnector()
 local_storage = LocalDataSource()
 
 
-class MessageLogger(LocalConnector):
+class LogDigester(LocalConnector):
     def __init__(self, client_od, mqtt_broker):
-        super(MessageLogger, self).__init__(client_od, mqtt_broker)
+        super(LogDigester, self).__init__(client_od, mqtt_broker)
 
     @staticmethod
     def on_message(client, userdata, message):
@@ -28,12 +28,12 @@ class MessageLogger(LocalConnector):
         print("log: ", buf)
 
 
-if __name__ == '__main__':
+def main(args=None):
     # Initialize connection to southbound
     broker = '172.18.1.2'
-    client_id = 'chariot_log_storage'
+    client_id = '%s_chariot_log_storage' % uuid.uuid4()
 
-    logger = MessageLogger(client_id, broker)
+    logger = LogDigester(client_id, broker)
 
     logger.subscribe([
         ('dispatcher/#', 0),
@@ -41,3 +41,7 @@ if __name__ == '__main__':
     ])
 
     logger.start()
+
+
+if __name__ == '__main__':
+    main()

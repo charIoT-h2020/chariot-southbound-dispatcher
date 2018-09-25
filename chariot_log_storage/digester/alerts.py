@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
-from connector import LocalConnector
-from datasource import LocalDataSource, DataPoint
+import uuid
+from chariot_log_storage.chariot_log_storage.connector import LocalConnector
+from chariot_log_storage.chariot_log_storage.datasource import LocalDataSource, DataPoint
 
 
 local_storage = LocalDataSource()
 
 
-class MessageLogger(LocalConnector):
+class AlertDigester(LocalConnector):
 
     @staticmethod
     def on_message(client, userdata, message):
@@ -21,15 +22,19 @@ class MessageLogger(LocalConnector):
         print("log: ", buf)
 
 
-if __name__ == '__main__':
+def main(args = None):
     # Initialize connection to northbound
     broker = '172.18.1.3'
-    client_id = 'chariot_log_alert'
+    client_id = '%s_chariot_log_alert' % uuid.uuid4()
 
-    logger = MessageLogger(client_id, broker)
+    logger = AlertDigester(client_id, broker)
 
     logger.subscribe([
         ('alerts/#', 0)
     ])
 
     logger.start()
+
+
+if __name__ == '__main__':
+    main()

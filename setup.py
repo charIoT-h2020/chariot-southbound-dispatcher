@@ -40,7 +40,16 @@ setup(
     include_package_data=True,
     keywords='chariot_log_storage',
     name='chariot_log_storage',
-    packages=find_packages(include=['chariot_log_storage', 'chariot_log_storage.*']),
+    packages=find_packages(include=[
+        'chariot_log_storage',
+        'chariot_log_storage.*'
+    ]),
+    entry_points={
+          'console_scripts': [
+              'logs = chariot_log_storage.digester.logs:main',
+              'alerts = chariot_log_storage.digester.alerts:main'
+          ]
+    },
     scripts=['scripts/send_alert.py', 'scripts/send_log.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
