@@ -11,12 +11,10 @@ class LocalConnector(object):
         self.consumer.on_log = self.on_log
         self.consumer.on_message = self.on_message
 
-    @staticmethod
-    def on_message(client, userdata, message):
+    def on_message(self, client, userdata, message):
         pass
 
-    @staticmethod
-    def on_log(client, userdata, level, buf):
+    def on_log(self, client, userdata, level, buf):
         pass
 
     def subscribe(self, topic):

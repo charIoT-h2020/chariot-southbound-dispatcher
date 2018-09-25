@@ -3,28 +3,22 @@ import uuid
 from ..connector import WatsonConnector, LocalConnector
 from ..datasource import LocalDataSource, DataPoint
 
-connector = WatsonConnector()
-local_storage = LocalDataSource()
-
 
 class LogDigester(LocalConnector):
     def __init__(self, client_od, mqtt_broker):
         super(LogDigester, self).__init__(client_od, mqtt_broker)
+        self.connector = WatsonConnector()
+        self.local_storage = LocalDataSource()
 
-    @staticmethod
-    def on_message(client, userdata, message):
+    def on_message(self, client, userdata, message):
         point = DataPoint('fog_logs', 'message', message, 'd')
 
         print("(%s) message received(%s): %s" % (message.topic, message.retain, point.message))
 
-        local_storage.publish(point)
-        connector.publish(point)
+        self.local_storage.publish(point)
+        # self.connector.publish(point)
 
-        if message.retain == 1:
-            print("This is a retained message")
-
-    @staticmethod
-    def on_log(client, userdata, level, buf):
+    def on_log(self, client, userdata, level, buf):
         print("log: ", buf)
 
 

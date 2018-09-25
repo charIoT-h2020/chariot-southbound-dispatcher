@@ -4,21 +4,19 @@ from ..connector import LocalConnector
 from ..datasource import LocalDataSource, DataPoint
 
 
-local_storage = LocalDataSource()
-
-
 class AlertDigester(LocalConnector):
+    def __init__(self, client_od, broker):
+        super(AlertDigester, self).__init__(client_od, broker)
+        self.local_storage = LocalDataSource()
 
-    @staticmethod
-    def on_message(client, userdata, message):
+    def on_message(self, client, userdata, message):
         point = DataPoint('fog_logs', 'alerts', message)
-        local_storage.publish(point)
+        self.local_storage.publish(point)
 
         if message.retain == 1:
             print("This is a retained message")
 
-    @staticmethod
-    def on_log(client, userdata, level, buf):
+    def on_log(self, client, userdata, level, buf):
         print("log: ", buf)
 
 
