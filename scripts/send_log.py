@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
-from connector.local import LocalConnector
+from chariot_log_storage.connector.local import LocalConnector
 
 
 class MessageGenerator(LocalConnector):
@@ -10,13 +9,9 @@ class MessageGenerator(LocalConnector):
 
 
 # Initialize connection to southbound
-broker = '172.18.1.3'
-client_id = 'chariot_log_alert_demo'
+broker = '172.18.1.2'
+client_id = 'chariot_log_storage_demo'
 
 producer = MessageGenerator(client_id, broker)
-alert = {
-    'severity': 100,
-    'message': 'Sensor urn:ngsi-ld:temp:001 returns sensitive information'
-}
-producer.publish('alerts', json.dumps(alert))
+producer.publish('dispatcher/urn:ngsi-ld:temp:001', '0')
 producer.start(False)
