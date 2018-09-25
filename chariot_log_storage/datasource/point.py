@@ -17,3 +17,6 @@ class DataPoint(object):
         else:
             self.message = decoded_msg[attribute_name]
         self.timestamp = datetime.datetime.now().isoformat()
+
+    def _event_type(self):
+        return self.topic.replace('/', '.')

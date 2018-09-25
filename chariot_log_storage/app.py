@@ -18,7 +18,7 @@ class MessageLogger(LocalConnector):
         print("(%s) message received(%s): %s" % (message.topic, message.retain, point.message))
 
         local_storage.publish(point)
-        connector.publish('message', point)
+        connector.publish(point)
 
         if message.retain == 1:
             print("This is a retained message")

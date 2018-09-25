@@ -21,13 +21,11 @@ class WatsonConnector(Process):
         except ibmiotf.ConnectionException as e:
             print(e)
 
-    def publish(self, topic, message):
+    def publish(self, point):
         """
-
-        :param topic: topic
-        :param message: message
+        :param point: point
         :return:
         """
-        message['timestamp'] = datetime.datetime.now().isoformat()
-        self.iot_client.publishGatewayEvent(event=topic, msgFormat="json", data=message)
+        point.message['timestamp'] = datetime.datetime.now().isoformat()
+        self.iot_client.publishGatewayEvent(event=point.table, msgFormat="json", data=point.message)
 
