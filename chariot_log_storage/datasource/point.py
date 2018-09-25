@@ -8,7 +8,7 @@ class DataPoint(object):
         self.db = db
         self.table = table
 
-        msg = message.decode('utf-8')
+        msg = message.payload.decode('utf-8')
         decoded_msg = json.loads(msg)
 
         self.topic = message.topic
