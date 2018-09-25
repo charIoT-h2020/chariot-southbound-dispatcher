@@ -41,6 +41,7 @@ setup(
     keywords='chariot_log_storage',
     name='chariot_log_storage',
     packages=find_packages(include=['chariot_log_storage', 'chariot_log_storage.*']),
+    scripts=['scripts/send_alert.py', 'scripts/send_log.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
