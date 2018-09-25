@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-import datetime
-
-from influxdb import InfluxDBClient
 from connector import LocalConnector
 from datasource import LocalDataSource, DataPoint
 
