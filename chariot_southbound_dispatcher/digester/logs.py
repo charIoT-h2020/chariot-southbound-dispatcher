@@ -2,8 +2,8 @@
 import uuid
 import json
 
-from ..connector import WatsonConnector, LocalConnector
-from ..datasource import LocalDataSource, DataPoint
+from chariot_base.connector import WatsonConnector, LocalConnector
+from chariot_base.datasource import LocalDataSource, DataPoint
 
 
 class LogDigester(LocalConnector):
@@ -19,7 +19,7 @@ class LogDigester(LocalConnector):
 
         self.local_storage.publish(point)
         point.message['timestamp'] = point.timestamp
-        self.publish('engine/privacy', json.dumps(point.message))
+        self.publish('dispatcher/privacy', json.dumps(point.message))
         # self.connector.publish(point)
 
     def on_log(self, client, userdata, level, buf):

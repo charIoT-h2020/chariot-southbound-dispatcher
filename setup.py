@@ -15,7 +15,8 @@ requirements = [
     'paho-mqtt',
     'influxdb',
     'cloudant',
-    'ibmiotf'
+    'ibmiotf',
+    'chariot_base'
 ]
 
 setup_requirements = [ ]
@@ -26,7 +27,7 @@ setup(
     author="George Theofilis",
     author_email='g.theofilis@clmsuk.com',
     classifiers=[
-        'License :: OSI Approved :: Eclipse Public License 1.0 (EPL-1.0)',
+        'License :: OSI Approved :: Eclipse Public License 1.0',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
@@ -46,15 +47,14 @@ setup(
     ]),
     entry_points={
           'console_scripts': [
-              'logs = chariot_southbound_dispatcher.digester.logs:main',
-              'alerts = chariot_southbound_dispatcher.digester.alerts:main'
+              'logs = chariot_southbound_dispatcher.digester.logs:main'
           ]
     },
-    scripts=['scripts/send_alert.py', 'scripts/send_log.py'],
+    scripts=['scripts/send_log.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/theofilis/chariot_southbound_dispatcher',
+    url='https://gitlab.com/chariot-h2020/chariot_southbound_dispatcher',
     version='0.1.0',
     zip_safe=False,
 )

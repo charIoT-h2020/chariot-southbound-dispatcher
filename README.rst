@@ -1,37 +1,22 @@
 ======================
-Chariot Log Storage
+Chariot Southbound Dispatcher
 ======================
 
-
-.. image:: https://img.shields.io/pypi/v/chariot_log_storage.svg
-        :target: https://pypi.python.org/pypi/chariot_log_storage
-
-.. image:: https://img.shields.io/travis/theofilis/chariot_log_storage.svg
-        :target: https://travis-ci.org/theofilis/chariot_log_storage
-
-.. image:: https://readthedocs.org/projects/chariot-log-storage/badge/?version=latest
-        :target: https://chariot-log-storage.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-
-
-
-Python Boilerplate contains all the boilerplate you need to create a Python package.
+Chariot southbound dispatcher micro-service
 
 
 * Free software: Eclipse Public License 1.0
-* Documentation: https://chariot-log-storage.readthedocs.io.
 
 Build docker images
 --------
 
-docker build -f Dockerfile.logs --tag chariot_southbound_dispatcher .
-docker build -f Dockerfile.alerts --tag chariot_southbound_dispatcher_alerts .
+docker build --tag chariot_southbound_dispatcher .
 
 Features
 --------
 
-* TODO
+* Log message to the local database instance
+* Log message to the cloud database instance
 
 Credits
 -------

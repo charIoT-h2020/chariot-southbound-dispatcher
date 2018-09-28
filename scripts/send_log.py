@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-from chariot_log_storage.connector.local import LocalConnector
+from chariot_base.connector import LocalConnector
 
 
 class MessageGenerator(LocalConnector):

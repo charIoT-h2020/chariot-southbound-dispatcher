@@ -1,2 +1,0 @@
-http://192.168.2.24:8086/query?pretty=true&db=fog_logs&q=SELECT "humidity", "temperature" FROM "message" WHERE "id"='urn:ngsi-ld:gateway_5410ec4d1601'
-http://192.168.2.24:8086/query?pretty=true&db=fog_logs&q=SELECT "severity", "message" FROM "alerts" WHERE "id"='urn:ngsi-ld:gateway_5410ec4d1601'
