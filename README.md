@@ -22,7 +22,7 @@ docker rmi $(docker images -f "dangling=true" -q)
 ### Send message to mqtt broker
 
 ```
-mosquitto_pub -m '{"d": {"temperature": -10, "humidity": 40.0}}' -t dispatcher/urn:ngsi-ld:temp:001
+mosquitto_pub -m '{"d": {"temperature": -10.0, "humidity": 40.0}}' -t dispatcher/urn:ngsi-ld:temp:001
 ```
 
 ## Features
