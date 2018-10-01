@@ -19,7 +19,7 @@ class LogDigester(LocalConnector):
 
         self.local_storage.publish(point)
         point.message['timestamp'] = point.timestamp
-        self.publish('dispatcher/privacy', json.dumps(point.message))
+        self.publish('privacy/%s' % message.topic, json.dumps(point.message))
         # self.connector.publish(point)
 
     def on_log(self, client, userdata, level, buf):
