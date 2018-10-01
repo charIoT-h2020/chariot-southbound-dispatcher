@@ -10,7 +10,19 @@ Chariot southbound dispatcher micro-service
 Build docker images
 --------
 
-docker build --tag chariot_southbound_dispatcher .
+.. code:: bash
+    docker build --tag chariot_southbound_dispatcher .
+
+Clean dangling images:
+
+.. code:: bash
+  docker rmi $(docker images -f "dangling=true" -q)
+
+Send message to mqtt broker
+--------
+
+.. code:: bash
+  mosquitto_pub -m '{"d": {"temperature": -10, "humidity": 40.0}}' -t dispatcher/urn:ngsi-ld:temp:001
 
 Features
 --------
