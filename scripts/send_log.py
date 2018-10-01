@@ -16,8 +16,8 @@ client_id = 'chariot_log_storage_demo'
 producer = MessageGenerator(client_id, broker)
 log = {
     'd': {
-        'temperature': -10.1,
-        'humidity': 40.1
+        'temperature': -10.0,
+        'humidity': 40.0
     }
 }
 producer.publish('dispatcher/urn:ngsi-ld:temp:001', json.dumps(log))
