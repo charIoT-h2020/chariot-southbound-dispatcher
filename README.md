@@ -27,8 +27,10 @@ mosquitto_pub -m '{"d": {"temperature": -10, "humidity": 40.0}}' -t dispatcher/u
 
 ## Features
 
+* Get message from the gateway
 * Log message to the local database instance
 * Log message to the cloud database instance
+* Forward message to the privacy engine
 
 ## Credits
 
