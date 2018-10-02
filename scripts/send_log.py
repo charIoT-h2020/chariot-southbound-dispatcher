@@ -20,5 +20,5 @@ log = {
         'humidity': 40.0
     }
 }
-producer.publish('dispatcher/urn:ngsi-ld:temp:001', json.dumps(log))
+producer.publish('dispatcher/temp:001', json.dumps(log))
 producer.start(False)
