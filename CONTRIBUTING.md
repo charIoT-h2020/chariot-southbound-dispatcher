@@ -9,7 +9,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://gitlab.com/chariot-h2020/chariot_log_storage/issues.
+Report bugs at https://gitlab.com/chariot-h2020/chariot-southbound-dispatcher/issues.
 
 If you are reporting a bug, please include:
 
@@ -29,13 +29,13 @@ and "help wanted" is open to whoever wants to implement it.
 
 ### Write Documentation
 
-Chariot Log Storage could always use more documentation, whether as part of the
-official Chariot Log Storage docs, in docstrings, or even on the web in blog posts,
+CharIoT Southbound Dispatcher could always use more documentation, whether as part of the
+official CharIoT Southbound Dispatcher docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://gitlab.com/chariot-h2020/chariot_log_storage/issues.
+The best way to send feedback is to file an issue at https://gitlab.com/chariot-h2020/chariot-southbound-dispatcher/issues.
 
 If you are proposing a feature:
 
@@ -46,17 +46,17 @@ If you are proposing a feature:
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `chariot_log_storage` for local development.
+Ready to contribute? Here's how to set up `chariot_southbound_dispatcher` for local development.
 
-1. Fork the `chariot_log_storage` repo on GitLab.
+1. Fork the `chariot_southbound_dispatcher` repo on GitLab.
 2. Clone your fork locally::
    ```
    $ git clone git@gitlab.com/chariot-h2020/chariot_log_storage.git
    ```
 3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
    ```
-   $ mkvirtualenv chariot_log_storage
-   $ cd chariot_log_storage/
+   $ mkvirtualenv chariot_southbound_dispatcher
+   $ cd chariot_southbound_dispatcher/
    $ python setup.py develop
    ```
 4. Create a branch for local development::
@@ -68,7 +68,7 @@ Ready to contribute? Here's how to set up `chariot_log_storage` for local develo
 5. When you're done making changes, check that your changes pass flake8 and the
    tests, including testing other Python versions with tox::
    ```
-   $ flake8 chariot_log_storage tests
+   $ flake8 chariot_southbound_dispatcher tests
    $ python setup.py test or py.test
    $ tox
    ```
@@ -91,9 +91,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 2.7, 3.4, 3.5 and 3.6, and for PyPy. Check
-   https://travis-ci.org/theofilis/chariot_log_storage/pull_requests
-   and make sure that the tests pass for all supported Python versions.
+3. The pull request should work for Python 3.6, and for PyPy.
 
 Tips
 ----
@@ -101,7 +99,7 @@ Tips
 To run a subset of tests::
 
    ```
-    $ python -m unittest tests.test_chariot_log_storage
+    $ python -m unittest tests.test_chariot_southbound_dispatcher
    ```
 
 Deploying
@@ -115,4 +113,4 @@ $ bumpversion patch # possible: major / minor / patch
 $ git push
 $ git push --tags
 ```
-Travis will then deploy to PyPI if tests pass.
+GitLab will then deploy to PyPI if tests pass.

@@ -1,4 +1,4 @@
-# Chariot Southbound Dispatcher
+# CharIoT Southbound Dispatcher
 
 Chariot southbound dispatcher micro-service
 
