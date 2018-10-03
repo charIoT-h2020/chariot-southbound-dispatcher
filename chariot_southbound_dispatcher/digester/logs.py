@@ -29,14 +29,14 @@ class LogDigester(LocalConnector):
                     'sensor_id': '%s_%s' % (sensor_id, attr)
                 }
 
-                self.publish('privacy' % message.topic, json.dumps(message_meta))
+                self.publish('privacy', json.dumps(message_meta))
         else:
             message_meta = {
                 'value': point.message,
                 'sensor_id': sensor_id
             }
 
-            self.publish('privacy' % message.topic, json.dumps(message_meta))
+            self.publish('privacy', json.dumps(message_meta))
         # self.connector.publish(point)
 
     def on_log(self, client, userdata, level, buf):
