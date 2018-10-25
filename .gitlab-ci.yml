@@ -2,6 +2,7 @@ image: docker:stable
 
 services:
   - docker:dind
+  - eclipse-mosquitto
 
 variables:
   CONTAINER_IMAGE: registry.gitlab.com/$CI_PROJECT_PATH

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import uuid
 import json
 
@@ -9,40 +10,61 @@ from chariot_base.datasource import LocalDataSource, DataPoint
 class LogDigester(LocalConnector):
     def __init__(self, client_od, mqtt_broker):
         super(LogDigester, self).__init__(client_od, mqtt_broker)
-        self.connector = WatsonConnector()
-        self.local_storage = LocalDataSource()
+        self.connector = None
+        self.local_storage = None
 
     def on_message(self, client, userdata, message):
-        point = DataPoint('fog_logs', 'message', message, 'd')
-
-        print("(%s) message received(%s): %s" % (message.topic, message.retain, point.message))
-
-        self.local_storage.publish(point)
+        point = self.to_data_point(message)
+        self.store_to_local(point)
         point.message['timestamp'] = point.timestamp
+        self.forward_to_engines(point, message.topic)
+        self.store_to_global(point)
 
-        sensor_type, sensor_id = self.get_sensor_info(message.topic)
+    def on_log(self, client, userdata, level, buf):
+        print("log: ", buf)
 
+    def set_up_watson(self):
+        self.connector = WatsonConnector()
+
+    def set_up_local_storage(self):
+        self.local_storage = LocalDataSource()
+
+    def forward_to_engines(self, point, topic):
+        sensor_type, sensor_id = self.get_sensor_info(topic)
         if sensor_type == 0:
             for attr in point.message:
                 message_meta = {
                     'value': point.message[attr],
                     'sensor_id': '%s_%s' % (sensor_id, attr)
                 }
-
                 self.publish('privacy', json.dumps(message_meta))
         else:
             message_meta = {
                 'value': point.message,
                 'sensor_id': sensor_id
             }
-
             self.publish('privacy', json.dumps(message_meta))
-        # self.connector.publish(point)
 
-    def on_log(self, client, userdata, level, buf):
-        print("log: ", buf)
+    def store_to_local(self, point):
+        if self.local_storage is not None:
+            self.local_storage.publish(point)
 
-    def get_sensor_info(self, topic):
+    def store_to_global(self, point):
+        if self.connector is not None:
+            self.connector.publish(point)
+
+    def disconnect(self, point):
+        if self is not None:
+            self.connector.publish(point)
+
+    @staticmethod
+    def to_data_point(message):
+        point = DataPoint('fog_logs', 'message', message, 'd')
+        print("(%s) message received(%s): %s" % (message.topic, message.retain, point.message))
+        return point
+
+    @staticmethod
+    def get_sensor_info(topic):
         topic = topic.replace('dispatcher/', '')
 
         gateways_ids = {
@@ -58,7 +80,7 @@ class LogDigester(LocalConnector):
 def main(args=None):
     # Initialize connection to southbound
     broker = '172.18.1.2'
-    client_id = '%s_chariot_log_storage' % uuid.uuid4()
+    client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
 
     logger = LogDigester(client_id, broker)
 
