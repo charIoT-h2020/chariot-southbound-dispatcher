@@ -1,101 +1,104 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Unit test package for chariot_southbound dispatcher."""
+import asyncio
+import json
+import gmqtt
+import pytest
 
 import uuid
-import time
-import unittest
 
+from chariot_base.tests import cleanup, Callbacks
 from chariot_southbound_dispatcher.digester import LogDigester
+from chariot_southbound_dispatcher.digester.logs import main
+
+OPTS = json.load(open('tests/config.json', 'r'))
+options = OPTS['mosquitto']
+
+host = options['host']
+port = options['port']
+username = options['username']
+
+topic = 'dispatcher'
 
 
-def connect_to_mqtt_facade(topic):
-    def connect(func):
-        broker = 'localhost'
-        client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
+@pytest.fixture()
+async def init_clients():
+    await cleanup(host, port, username)
 
-        logger = LogDigesterFacade(client_id, broker)
-        logger.subscribe([
-            (topic, 0)
-        ])
+    a_client = gmqtt.Client('%s_chariot_southbound_dispatcher' % uuid.uuid4(), clean_session=True)
+    a_client.set_auth_credentials(username)
 
-        def func_wrapper(self, *args, **kwargs):
-            result = func(self, logger, *args, **kwargs)
-            time.sleep(.500)
-            self.assertEqual(logger.errors, result)
-            return result
+    b_client = gmqtt.Client('%s_chariot_southbound_dispatcher' % uuid.uuid4(), clean_session=True)
+    b_client.set_auth_credentials(username)
 
-        return func_wrapper
-    return connect
+    callback = LogDigester()
+    callback.register_for_client(a_client)
 
+    callback_b = Callbacks()
+    callback_b.register_for_client(b_client)
 
-class LogDigesterFacade(LogDigester):
-    def __init__(self, client_od, broker):
-        super(LogDigesterFacade, self).__init__(client_od, broker)
-        self.errors = False
+    yield a_client, callback, b_client, callback_b
 
-    def on_message(self, client, userdata, message):
-        try:
-            super(LogDigesterFacade, self).on_message(client, userdata, message)
-        except Exception as err:
-            print (str(err))
-            self.errors = True
-
-    def on_log(self, client, userdata, level, buf):
-        super(LogDigesterFacade, self).on_log(client, userdata, level, buf)
+    await a_client.disconnect()
+    await b_client.disconnect()
 
 
-class Message:
-    def __init__(self, message, topic):
-        self.retain = False
-        self.payload = message.encode()
-        self.topic = topic
+@pytest.mark.asyncio
+async def test_basic(init_clients):
+    a_client, callback, b_client, callback_b = init_clients
+
+    await a_client.connect(host=host, port=port, version=4)
+    await b_client.connect(host=host, port=port, version=4)
+
+    callback.subscribe("%s/#" % topic, qos=2)
+    callback.subscribe('iot-2/evt/nms_status/fmt/json', qos=2)
+    callback_b.subscribe("privacy/#", qos=2)
+
+    await asyncio.sleep(1)
+
+    callback.publish("iot-2/evt/nms_status/fmt/json", '{"d": {"din0": 0}}')
+    callback.publish("%s/iot-2/evt/nms_status/fmt/json" % topic, '{"d": {"din0": 0}}')
+    callback.publish("%s/temperature" % topic, '{"din0": 1}')
+
+    await asyncio.sleep(1)
+
+    assert len(callback_b.messages) == 3
+
+    callback.clear()
 
 
-class LogDigesterTest(unittest.TestCase):
+def test_get_sensor_info():
+    logger = LogDigester()
 
-    @connect_to_mqtt_facade('dispatcher/#')
-    def test_to_data_point(self, logger):
-        logger.to_data_point(Message('{"d": {}}', 'temperature'))
-        logger.to_data_point(Message('{"d": {"din0": 0, "din1": 0, "din2": 0}}', 'iot-2/evt/nms_status/fmt/json'))
-        self.assertRaises(Exception, logger.to_data_point, [Message('{}', 'temperature')])
-        self.assertRaises(Exception, logger.to_data_point, [Message('0', 'temperature')])
+    assert logger.get_sensor_info('temperature') == (1, 'temperature')
+    assert logger.get_sensor_info('iot-2/evt/nms_status/fmt/json') == (0, '5410ec4d1601')
 
-        logger.start(False)
-        return False
 
-    @connect_to_mqtt_facade('dispatcher/#')
-    def test_get_sensor_info(self, logger):
-        self.assertEqual(logger.get_sensor_info('temperature'), (1, 'temperature'))
-        self.assertEqual(logger.get_sensor_info('iot-2/evt/nms_status/fmt/json'), (0, '5410ec4d1601'))
+def test_set_up_watson():
+    logger = LogDigester()
+    options_watson = OPTS['iot']['client1']
 
-        logger.start(False)
-        return False
+    assert logger.connector is None
+    logger.set_up_watson(options_watson)
+    assert logger.connector is not None
+    point = logger.point_factory.from_json_string('{"d": {"din0": 0}}', 'd')
 
-    @connect_to_mqtt_facade('dispatcher/#')
-    def test_message_payload_from_panthora(self, logger):
-        if logger is not None:
-            logger.publish('dispatcher/temperature', '{"d": {"din0": 0, "din1": 0, "din2": 0}}')
-            logger.start(False)
-        return False
+    assert logger.store_to_global(point) is True
 
-    @connect_to_mqtt_facade('dispatcher/#')
-    def test_message_payload_correct(self, logger):
-        if logger is not None:
-            logger.publish('dispatcher/temperature', '{"d": {}}')
-            logger.start(False)
-        return False
 
-    @connect_to_mqtt_facade('dispatcher/#')
-    def test_message_payload_empty_json(self, logger):
-        if logger is not None:
-            logger.publish('dispatcher/temperature', '{}')
-            logger.start(False)
-        return True
+def test_set_up_local_storage():
+    logger = LogDigester()
+    options_db = OPTS['local_storage']
 
-    @connect_to_mqtt_facade('dispatcher/#')
-    def test_message_payload_number(self, logger):
-        if logger is not None:
-            logger.publish('dispatcher/temperature', 0)
-            logger.start(False)
-        return True
+    assert logger.local_storage is None
+    logger.set_up_local_storage(options_db)
+    assert logger.local_storage is not None
+
+    point = logger.point_factory.from_json_string('{"d": {"din0": 0}}', 'd')
+    assert logger.store_to_local(point) is True
+
+
+@pytest.mark.asyncio
+async def test_main():
+    await main()

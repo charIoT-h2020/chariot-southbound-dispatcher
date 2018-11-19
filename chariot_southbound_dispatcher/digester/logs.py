@@ -2,38 +2,37 @@
 
 import uuid
 import json
+import gmqtt
+import asyncio
 
 from chariot_base.connector import WatsonConnector, LocalConnector
-from chariot_base.datasource import LocalDataSource, DataPoint
+from chariot_base.model import DataPointFactory
+from chariot_base.datasource import LocalDataSource
 
 
 class LogDigester(LocalConnector):
-    def __init__(self, client_od, mqtt_broker):
-        super(LogDigester, self).__init__(client_od, mqtt_broker)
+    def __init__(self):
+        super(LogDigester, self).__init__()
         self.connector = None
+        self.point_factory = DataPointFactory('fog_logs', 'message')
         self.local_storage = None
 
-    def on_message(self, client, userdata, message):
-        point = self.to_data_point(message)
+        self.gateways_ids = {
+            'iot-2/evt/nms_status/fmt/json': '5410ec4d1601'
+        }
+
+    def on_message(self, client, topic, payload, qos, properties):
+        point = self.to_data_point(payload, topic)
         self.store_to_local(point)
-        point.message['timestamp'] = point.timestamp
-        self.forward_to_engines(point, message.topic)
+        self.forward_to_engines(point, topic)
         self.store_to_global(point)
-
-    def on_log(self, client, userdata, level, buf):
-        print("log: ", buf)
-
-    def set_up_watson(self):
-        self.connector = WatsonConnector()
-
-    def set_up_local_storage(self):
-        self.local_storage = LocalDataSource()
 
     def forward_to_engines(self, point, topic):
         sensor_type, sensor_id = self.get_sensor_info(topic)
         if sensor_type == 0:
             for attr in point.message:
                 message_meta = {
+                    'timestamp': point.timestamp,
                     'value': point.message[attr],
                     'sensor_id': '%s_%s' % (sensor_id, attr)
                 }
@@ -47,50 +46,59 @@ class LogDigester(LocalConnector):
 
     def store_to_local(self, point):
         if self.local_storage is not None:
-            self.local_storage.publish(point)
+            return self.local_storage.publish(point)
 
     def store_to_global(self, point):
         if self.connector is not None:
-            self.connector.publish(point)
+            return self.connector.publish(point)
 
-    def disconnect(self, point):
-        if self is not None:
-            self.connector.publish(point)
+    def set_up_watson(self, options):
+        self.connector = WatsonConnector(options)
 
-    @staticmethod
-    def to_data_point(message):
-        point = DataPoint('fog_logs', 'message', message, 'd')
-        print("(%s) message received(%s): %s" % (message.topic, message.retain, point.message))
-        return point
+    def set_up_local_storage(self, options):
+        self.local_storage = LocalDataSource(options['host'], options['port'], options['username'], options['password'], 'test_db')
 
-    @staticmethod
-    def get_sensor_info(topic):
+    def to_data_point(self, message, topic):
         topic = topic.replace('dispatcher/', '')
 
-        gateways_ids = {
-            'iot-2/evt/nms_status/fmt/json': '5410ec4d1601'
-        }
+        if topic in self.gateways_ids:
+            return self.point_factory.from_json_string(message, 'd')
+        else:
+            return self.point_factory.from_json_string(message)
 
-        if topic in gateways_ids:
-            return 0, gateways_ids[topic]
+    def get_sensor_info(self, topic):
+        topic = topic.replace('dispatcher/', '')
+
+        if topic in self.gateways_ids:
+            return 0, self.gateways_ids[topic]
         else:
             return 1, topic
 
 
-def main(args=None):
+async def main(args=None):
     # Initialize connection to southbound
-    broker = '172.18.1.2'
+    OPTS = json.load(open('tests/config.json', 'r'))
+
+    mqtt_options = OPTS['mosquitto']
+    options_watson = OPTS['iot']['client1']
+    options_db = OPTS['local_storage']
+
+    host = 'localhost'
+    port = 1883
     client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
 
-    logger = LogDigester(client_id, broker)
+    client = gmqtt.Client(client_id, clean_session=True)
+    await client.connect(host=mqtt_options['host'], port=mqtt_options['port'], version=4)
 
-    logger.subscribe([
-        ('dispatcher/#', 0),
-        ('iot-2/evt/nms_status/fmt/json', 1)
-    ])
+    logger = LogDigester()
+    logger.register_for_client(client)
+    logger.set_up_local_storage(options_db)
+    logger.set_up_watson(options_watson)
 
-    logger.start()
+    logger.subscribe("dispatcher/#", qos=2)
+    logger.subscribe('iot-2/evt/nms_status/fmt/json', qos=2)
 
+    await asyncio.sleep(1)
 
 if __name__ == '__main__':
     main()
