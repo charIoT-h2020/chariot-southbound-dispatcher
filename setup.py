@@ -16,7 +16,7 @@ requirements = [
     'influxdb',
     'cloudant',
     'ibmiotf',
-    'chariot_base'
+    'chariot_base', 'gmqtt'
 ]
 
 setup_requirements = [ ]

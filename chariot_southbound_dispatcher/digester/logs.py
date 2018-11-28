@@ -83,8 +83,6 @@ async def main(args=None):
     options_watson = OPTS['iot']['client1']
     options_db = OPTS['local_storage']
 
-    host = 'localhost'
-    port = 1883
     client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
 
     client = gmqtt.Client(client_id, clean_session=True)
@@ -101,4 +99,6 @@ async def main(args=None):
     await asyncio.sleep(1)
 
 if __name__ == '__main__':
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
+    loop.close()

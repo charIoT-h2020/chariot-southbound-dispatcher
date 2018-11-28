@@ -21,7 +21,7 @@
         }
     },
     "local_storage": {
-        "host": "192.168.2.24",
+        "host": "localhost",
         "port": 8086,
         "username": "root",
         "password": "root"
