@@ -24,11 +24,20 @@
         "host": "localhost",
         "port": 8086,
         "username": "root",
-        "password": "root"
+        "password": "root",
+        "database": "test_db"
     },
     "mosquitto": {
         "host": "localhost",
         "port": 1883,
         "username": ""
+    },
+    "dispatcher": {
+        "gateways_ids": {
+            "iot-2/evt/nms_status/fmt/json": "5410ec4d1601"
+        },
+        "database": "fog_logs",
+        "table": "message",
+        "listen": "dispatcher/#"
     }
 }

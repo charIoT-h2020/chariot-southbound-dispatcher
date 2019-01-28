@@ -11,15 +11,13 @@ from chariot_base.datasource import LocalDataSource
 
 
 class LogDigester(LocalConnector):
-    def __init__(self):
+    def __init__(self, options):
         super(LogDigester, self).__init__()
         self.connector = None
-        self.point_factory = DataPointFactory('fog_logs', 'message')
+        self.point_factory = DataPointFactory(options['database'], options['table'])
         self.local_storage = None
 
-        self.gateways_ids = {
-            'iot-2/evt/nms_status/fmt/json': '5410ec4d1601'
-        }
+        self.gateways_ids = options['dispatcher']['gateways_ids']
 
     def on_message(self, client, topic, payload, qos, properties):
         point = self.to_data_point(payload, topic)
@@ -56,7 +54,9 @@ class LogDigester(LocalConnector):
         self.connector = WatsonConnector(options)
 
     def set_up_local_storage(self, options):
-        self.local_storage = LocalDataSource(options['host'], options['port'], options['username'], options['password'], 'test_db')
+        self.local_storage = LocalDataSource(
+            options['host'], options['port'], options['username'], options['password'], options['database']
+        )
 
     def to_data_point(self, message, topic):
         topic = topic.replace('dispatcher/', '')
@@ -82,19 +82,22 @@ async def main(args=None):
     mqtt_options = OPTS['mosquitto']
     options_watson = OPTS['iot']['client1']
     options_db = OPTS['local_storage']
+    options_dispatcher = OPTS['dispatcher']
 
     client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
 
     client = gmqtt.Client(client_id, clean_session=True)
     await client.connect(host=mqtt_options['host'], port=mqtt_options['port'], version=4)
 
-    logger = LogDigester()
+    logger = LogDigester(options_dispatcher)
     logger.register_for_client(client)
     logger.set_up_local_storage(options_db)
     logger.set_up_watson(options_watson)
 
-    logger.subscribe("dispatcher/#", qos=2)
-    logger.subscribe('iot-2/evt/nms_status/fmt/json', qos=2)
+    logger.subscribe(options_dispatcher['listen'], qos=2)
+
+    for key, value in options_dispatcher['gateways_ids'].items():
+        logger.subscribe(key, qos=2)
 
     await asyncio.sleep(1)
 
