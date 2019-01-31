@@ -4,6 +4,7 @@ import uuid
 import json
 import gmqtt
 import asyncio
+import signal
 
 from chariot_base.connector import WatsonConnector, LocalConnector
 from chariot_base.model import DataPointFactory
@@ -17,7 +18,7 @@ class LogDigester(LocalConnector):
         self.point_factory = DataPointFactory(options['database'], options['table'])
         self.local_storage = None
 
-        self.gateways_ids = options['dispatcher']['gateways_ids']
+        self.gateways_ids = options['gateways_ids']
 
     def on_message(self, client, topic, payload, qos, properties):
         point = self.to_data_point(payload, topic)
@@ -75,9 +76,16 @@ class LogDigester(LocalConnector):
             return 1, topic
 
 
+STOP = asyncio.Event()
+
+
+def ask_exit(*args):
+    STOP.set()
+
+
 async def main(args=None):
     # Initialize connection to southbound
-    OPTS = json.load(open('tests/config.json', 'r'))
+    OPTS = json.load(open('./tests/config.json', 'r'))
 
     mqtt_options = OPTS['mosquitto']
     options_watson = OPTS['iot']['client1']
@@ -99,9 +107,14 @@ async def main(args=None):
     for key, value in options_dispatcher['gateways_ids'].items():
         logger.subscribe(key, qos=2)
 
-    await asyncio.sleep(1)
+    await STOP.wait()
+    await client.disconnect()
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
+    
+    loop.add_signal_handler(signal.SIGINT, ask_exit)
+    loop.add_signal_handler(signal.SIGTERM, ask_exit)
+    
     loop.run_until_complete(main())
-    loop.close()
