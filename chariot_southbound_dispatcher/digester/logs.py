@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os  
 import uuid
 import json
 import gmqtt
@@ -85,30 +86,39 @@ def ask_exit(*args):
 
 async def main(args=None):
     # Initialize connection to southbound
-    OPTS = json.load(open('./tests/config.json', 'r'))
-
-    mqtt_options = OPTS['mosquitto']
-    options_watson = OPTS['iot']['client1']
-    options_db = OPTS['local_storage']
-    options_dispatcher = OPTS['dispatcher']
-
-    client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
-
-    client = gmqtt.Client(client_id, clean_session=True)
-    await client.connect(host=mqtt_options['host'], port=mqtt_options['port'], version=4)
-
-    logger = LogDigester(options_dispatcher)
-    logger.register_for_client(client)
-    logger.set_up_local_storage(options_db)
-    logger.set_up_watson(options_watson)
-
-    logger.subscribe(options_dispatcher['listen'], qos=2)
-
-    for key, value in options_dispatcher['gateways_ids'].items():
-        logger.subscribe(key, qos=2)
-
-    await STOP.wait()
-    await client.disconnect()
+    filename = None
+    for name in ['./config.json', './tests/config.json']:
+      if os.path.isfile(name):
+        filename = name
+    
+    if filename is None:
+      raise Exception('Configuration file is not exists')
+    
+    with open('./tests/config.json', 'r') as read_file:
+      OPTS = json.load(read_file)
+  
+      mqtt_options = OPTS['mosquitto']
+      options_watson = OPTS['iot']['client1']
+      options_db = OPTS['local_storage']
+      options_dispatcher = OPTS['dispatcher']
+  
+      client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
+  
+      client = gmqtt.Client(client_id, clean_session=True)
+      await client.connect(host=mqtt_options['host'], port=mqtt_options['port'], version=4)
+  
+      logger = LogDigester(options_dispatcher)
+      logger.register_for_client(client)
+      logger.set_up_local_storage(options_db)
+      logger.set_up_watson(options_watson)
+  
+      logger.subscribe(options_dispatcher['listen'], qos=2)
+  
+      for key, value in options_dispatcher['gateways_ids'].items():
+          logger.subscribe(key, qos=2)
+  
+      await STOP.wait()
+      await client.disconnect()
 
 
 if __name__ == '__main__':
