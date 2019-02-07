@@ -4,20 +4,14 @@
         "username": "56aa8c21-34f5-4e63-bf88-cf1ed1f94442-bluemix",
         "orgId": "jv8w5u"
     },
-    "iot": {
-        "client1": {
+    "watson_iot": {
+        "enabled": false,
+        "client": {
             "org": "jv8w5u",
             "type": "gateway",
             "id": "testing",
             "auth-method": "token",
             "auth-token": "Q(lB@aTQ+hm@AVrdw!"
-        },
-        "client2": {
-            "org": "jv8w5u",
-            "type": "gateway",
-            "id": "5410ec4d1601",
-            "auth-method": "token",
-            "auth-token": "Mw35yK?VRvsb-Qqjy3"
         }
     },
     "local_storage": {

@@ -98,7 +98,7 @@ async def main(args=None):
       OPTS = json.load(read_file)
   
       mqtt_options = OPTS['mosquitto']
-      options_watson = OPTS['iot']['client1']
+      options_watson = OPTS['watson_iot']
       options_db = OPTS['local_storage']
       options_dispatcher = OPTS['dispatcher']
   
@@ -110,7 +110,8 @@ async def main(args=None):
       logger = LogDigester(options_dispatcher)
       logger.register_for_client(client)
       logger.set_up_local_storage(options_db)
-      logger.set_up_watson(options_watson)
+      if options_watson['enabled']:
+          logger.set_up_watson(options_watson)
   
       logger.subscribe(options_dispatcher['listen'], qos=2)
   
