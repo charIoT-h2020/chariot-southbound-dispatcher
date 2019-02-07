@@ -15,6 +15,11 @@ from chariot_southbound_dispatcher.digester.logs import main
 OPTS = json.load(open('tests/config.json', 'r'))
 options = OPTS['mosquitto']
 
+mqtt_options = OPTS['mosquitto']
+options_watson = OPTS['watson_iot']
+options_db = OPTS['local_storage']
+options_dispatcher = OPTS['dispatcher']
+
 host = options['host']
 port = options['port']
 username = options['username']
@@ -32,7 +37,7 @@ async def init_clients():
     b_client = gmqtt.Client('%s_chariot_southbound_dispatcher' % uuid.uuid4(), clean_session=True)
     b_client.set_auth_credentials(username)
 
-    callback = LogDigester()
+    callback = LogDigester(options_dispatcher)
     callback.register_for_client(a_client)
 
     callback_b = Callbacks()
@@ -69,18 +74,17 @@ async def test_basic(init_clients):
 
 
 def test_get_sensor_info():
-    logger = LogDigester()
+    logger = LogDigester(options_dispatcher)
 
     assert logger.get_sensor_info('temperature') == (1, 'temperature')
     assert logger.get_sensor_info('iot-2/evt/nms_status/fmt/json') == (0, '5410ec4d1601')
 
 
 def test_set_up_watson():
-    logger = LogDigester()
-    options_watson = OPTS['iot']['client1']
+    logger = LogDigester(options_dispatcher)
 
     assert logger.connector is None
-    logger.set_up_watson(options_watson)
+    logger.set_up_watson(options_watson['client'])
     assert logger.connector is not None
     point = logger.point_factory.from_json_string('{"d": {"din0": 0}}', 'd')
 
@@ -88,7 +92,7 @@ def test_set_up_watson():
 
 
 def test_set_up_local_storage():
-    logger = LogDigester()
+    logger = LogDigester(options_dispatcher)
     options_db = OPTS['local_storage']
 
     assert logger.local_storage is None

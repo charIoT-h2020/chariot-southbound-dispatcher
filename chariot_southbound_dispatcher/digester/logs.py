@@ -111,7 +111,7 @@ async def main(args=None):
       logger.register_for_client(client)
       logger.set_up_local_storage(options_db)
       if options_watson['enabled']:
-          logger.set_up_watson(options_watson)
+          logger.set_up_watson(options_watson['client'])
   
       logger.subscribe(options_dispatcher['listen'], qos=2)
   
