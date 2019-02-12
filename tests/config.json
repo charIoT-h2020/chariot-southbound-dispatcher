@@ -15,14 +15,14 @@
         }
     },
     "local_storage": {
-        "host": "localhost",
+        "host": "192.168.2.24",
         "port": 8086,
         "username": "root",
         "password": "root",
-        "database": "test_db"
+        "database": "fog_logs"
     },
     "mosquitto": {
-        "host": "localhost",
+        "host": "192.168.2.24",
         "port": 1883,
         "username": ""
     },
@@ -33,5 +33,11 @@
         "database": "fog_logs",
         "table": "message",
         "listen": "dispatcher/#"
+    },
+    "tracer" : {
+        "host": "192.168.2.24",
+        "enabled": true,
+        "port": 5775,
+        "service": "southbound-dispatcher"
     }
 }
