@@ -94,9 +94,12 @@ class LogDigester(LocalConnector):
         topic = topic.replace('dispatcher/', '')
 
         if topic in self.gateways_ids:
-            return self.point_factory.from_json_string(message, 'd')
+            point = self.point_factory.from_json_string(message, 'd')
         else:
-            return self.point_factory.from_json_string(message)
+            point = self.point_factory.from_json_string(message)
+
+        point.id = str(point.id)
+        return point
 
     def get_sensor_info(self, topic):
         topic = topic.replace('dispatcher/', '')
