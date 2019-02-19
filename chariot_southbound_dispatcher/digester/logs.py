@@ -62,19 +62,20 @@ class LogDigester(LocalConnector):
     def store_to_local(self, point, child_span):
         span = self.start_span('store_to_local', child_span)
         result = False
+        span.set_tag('package_id', point.id)
         if self.local_storage is not None:
-            span.set_tag('package_id', point.id)
             result = self.local_storage.publish(point)
-            span.set_tag('is_ok', result)
+        span.set_tag('is_ok', result)
         self.close_span(span)
         return result
 
     def store_to_global(self, point, child_span):
         span = self.start_span('store_to_global', child_span)
         result = False
+        span.set_tag('package_id', point.id)
         if self.connector is not None:
-            result = self.connector.publish(point)
-            span.set_tag('is_ok', result)
+            result = self.connector.publish(point)        
+        span.set_tag('is_ok', result)
         self.close_span(span)
         return result
 
