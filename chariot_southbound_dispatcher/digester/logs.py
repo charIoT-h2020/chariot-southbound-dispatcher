@@ -26,8 +26,8 @@ class LogDigester(LocalConnector):
     def on_message(self, client, topic, payload, qos, properties):
         span = self.start_span('on_message')
         span.set_tag('topic', topic)
-
         point = self.to_data_point(payload, topic)
+        span.set_tag('package_id', point.id)
         self.store_to_local(point, span)
         self.forward_to_engines(point, topic, span)
         self.store_to_global(point, span)
@@ -39,9 +39,11 @@ class LogDigester(LocalConnector):
         sensor_type, sensor_id = self.get_sensor_info(topic)
         span.set_tag('sensor_type', sensor_type)
         span.set_tag('sensor_id', sensor_id)
+        span.set_tag('package_id', point.id)
         if sensor_type == 0:
             for attr in point.message:
                 message_meta = {
+                    'package_id': point.id,
                     'timestamp': point.timestamp,
                     'value': point.message[attr],
                     'sensor_id': '%s_%s' % (sensor_id, attr)
@@ -49,6 +51,7 @@ class LogDigester(LocalConnector):
                 self.publish('privacy', json.dumps(message_meta))
         else:
             message_meta = {
+                'package_id': point.id,
                 'value': point.message,
                 'sensor_id': sensor_id
             }
@@ -58,33 +61,22 @@ class LogDigester(LocalConnector):
 
     def store_to_local(self, point, child_span):
         span = self.start_span('store_to_local', child_span)
+        result = False
         if self.local_storage is not None:
-            span.set_tag('table', point.table)
+            span.set_tag('package_id', point.id)
             result = self.local_storage.publish(point)
-            self.close_span(span)
-            return result
+            span.set_tag('is_ok', result)
         self.close_span(span)
+        return result
 
     def store_to_global(self, point, child_span):
         span = self.start_span('store_to_global', child_span)
+        result = False
         if self.connector is not None:
-            self.close_span(span)
-            return self.connector.publish(point)
+            result = self.connector.publish(point)
+            span.set_tag('is_ok', result)
         self.close_span(span)
-
-    def start_span(self, id, child_span=None):
-        if self.tracer is None:
-            return
-
-        if child_span is None:
-            return self.tracer.tracer.start_span(id)
-        else:
-            return self.tracer.tracer.start_span(id, child_of=child_span)
-
-    def close_span(self, span):
-        if self.tracer is None:
-            return
-        span.finish()
+        return result
 
     def set_up_watson(self, options):
         self.connector = WatsonConnector(options)
