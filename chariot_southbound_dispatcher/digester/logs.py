@@ -24,60 +24,79 @@ class LogDigester(LocalConnector):
         self.gateways_ids = options['gateways_ids']
 
     def on_message(self, client, topic, payload, qos, properties):
-        span = self.start_span('on_message')
-        span.set_tag('topic', topic)
-        point = self.to_data_point(payload, topic)
-        span.set_tag('package_id', point.id)
-        self.store_to_local(point, span)
-        self.forward_to_engines(point, topic, span)
-        self.store_to_global(point, span)
-
-        self.close_span(span)
+        try:
+            span = self.start_span('on_message')
+            span.set_tag('topic', topic)
+            point = self.to_data_point(payload, topic)
+            span.set_tag('package_id', point.id)
+            self.store_to_local(point, span)
+            self.forward_to_engines(point, topic, span)
+            self.store_to_global(point, span)
+            self.close_span(span)
+        except:
+            span.set_tag('is_ok', False)
+            self.close_span(span)
+            raise
 
     def forward_to_engines(self, point, topic, child_span):
-        span = self.start_span('forward_to_engines', child_span)
-        sensor_type, sensor_id = self.get_sensor_info(topic)
-        span.set_tag('sensor_type', sensor_type)
-        span.set_tag('sensor_id', sensor_id)
-        span.set_tag('package_id', point.id)
-        if sensor_type == 0:
-            for attr in point.message:
+        try:
+            span = self.start_span('forward_to_engines', child_span)
+            sensor_type, sensor_id = self.get_sensor_info(topic)
+            span.set_tag('sensor_type', sensor_type)
+            span.set_tag('sensor_id', sensor_id)
+            span.set_tag('package_id', point.id)
+            if sensor_type == 0:
+                for attr in point.message:
+                    message_meta = {
+                        'package_id': point.id,
+                        'timestamp': point.timestamp,
+                        'value': point.message[attr],
+                        'sensor_id': '%s_%s' % (sensor_id, attr)
+                    }
+                    self.publish('privacy', json.dumps(message_meta))
+            else:
                 message_meta = {
                     'package_id': point.id,
-                    'timestamp': point.timestamp,
-                    'value': point.message[attr],
-                    'sensor_id': '%s_%s' % (sensor_id, attr)
+                    'value': point.message,
+                    'sensor_id': sensor_id
                 }
                 self.publish('privacy', json.dumps(message_meta))
-        else:
-            message_meta = {
-                'package_id': point.id,
-                'value': point.message,
-                'sensor_id': sensor_id
-            }
-            self.publish('privacy', json.dumps(message_meta))
-        
-        self.close_span(span)
+            
+            self.close_span(span)
+        except:
+            span.set_tag('is_ok', False)
+            self.close_span(span)
+            raise
 
     def store_to_local(self, point, child_span):
-        span = self.start_span('store_to_local', child_span)
-        result = False
-        span.set_tag('package_id', point.id)
-        if self.local_storage is not None:
-            result = self.local_storage.publish(point)
-        span.set_tag('is_ok', result)
-        self.close_span(span)
-        return result
+        try:
+            span = self.start_span('store_to_local', child_span)
+            result = False
+            span.set_tag('package_id', point.id)
+            if self.local_storage is not None:
+                result = self.local_storage.publish(point)
+            span.set_tag('is_ok', result)
+            self.close_span(span)
+            return result
+        except:
+            span.set_tag('is_ok', False)
+            self.close_span(span)
+            raise
 
     def store_to_global(self, point, child_span):
-        span = self.start_span('store_to_global', child_span)
-        result = False
-        span.set_tag('package_id', point.id)
-        if self.connector is not None:
-            result = self.connector.publish(point)        
-        span.set_tag('is_ok', result)
-        self.close_span(span)
-        return result
+        try:
+            span = self.start_span('store_to_global', child_span)
+            result = False
+            span.set_tag('package_id', point.id)
+            if self.connector is not None:
+                result = self.connector.publish(point)        
+            span.set_tag('is_ok', result)
+            self.close_span(span)
+            return result
+        except:
+            span.set_tag('is_ok', False)
+            self.close_span(span)
+            raise
 
     def set_up_watson(self, options):
         self.connector = WatsonConnector(options)
