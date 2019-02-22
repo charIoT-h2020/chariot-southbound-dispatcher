@@ -36,7 +36,6 @@ class LogDigester(LocalConnector):
         except:
             span.set_tag('is_ok', False)
             self.close_span(span)
-            raise
 
     def forward_to_engines(self, point, topic, child_span):
         try:
