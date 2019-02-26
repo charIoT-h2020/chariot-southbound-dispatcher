@@ -41,9 +41,9 @@ class LogDigester(LocalConnector):
     def forward_to_engines(self, point, topic, child_span):
         try:
             span = self.start_span('forward_to_engines', child_span)
-            sensor_type, sensor_id = self.get_sensor_info(topic)
+            sensor_type, _ = self.get_sensor_info(topic)
             span.set_tag('sensor_type', sensor_type)
-            span.set_tag('sensor_id', sensor_id)
+            span.set_tag('sensor_id', point.sensor_id)
             span.set_tag('package_id', point.id)
             if sensor_type == 0:
                 for attr in point.message:
@@ -51,14 +51,14 @@ class LogDigester(LocalConnector):
                         'package_id': point.id,
                         'timestamp': point.timestamp,
                         'value': point.message[attr],
-                        'sensor_id': '%s_%s' % (sensor_id, attr)
+                        'sensor_id': '%s_%s' % (point.sensor_id, attr)
                     }
                     self.publish('privacy', json.dumps(message_meta))
             else:
                 message_meta = {
                     'package_id': point.id,
                     'value': point.message,
-                    'sensor_id': sensor_id
+                    'sensor_id': point.sensor_id
                 }
                 self.publish('privacy', json.dumps(message_meta))
             
@@ -117,6 +117,7 @@ class LogDigester(LocalConnector):
         )
 
     def to_data_point(self, message, topic):
+        _, sensor_id = self.get_sensor_info(topic)
         topic = topic.replace('dispatcher/', '')
 
         if topic in self.gateways_ids:
@@ -124,6 +125,7 @@ class LogDigester(LocalConnector):
         else:
             point = self.point_factory.from_json_string(message)
 
+        point.sensor_id = sensor_id
         point.id = str(point.id)
         return point
 
