@@ -71,7 +71,7 @@ class LogDigester(LocalConnector):
     def store_to_local(self, point, child_span):
         result = False
 
-        if self.local_storage is not None:
+        if self.local_storage is None:
             return result
 
         try:
