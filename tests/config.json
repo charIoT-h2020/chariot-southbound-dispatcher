@@ -21,10 +21,17 @@
         "password": "root",
         "database": "fog_logs"
     },
-    "mosquitto": {
-        "host": "192.168.2.24",
-        "port": 1883,
-        "username": ""
+    "brokers": {
+        "southbound": {
+            "host": "192.168.2.24",
+            "port": 1883,
+            "username": ""
+        },
+        "northbound": {
+            "host": "192.168.2.24",
+            "port": 1883,
+            "username": ""
+        }
     },
     "dispatcher": {
         "gateways_ids": {

@@ -6,11 +6,12 @@ import json
 import gmqtt
 import asyncio
 import signal
+import logging
 
 from chariot_base.connector import WatsonConnector, LocalConnector
 from chariot_base.model import DataPointFactory
 from chariot_base.datasource import LocalDataSource
-from chariot_base.utilities import Tracer
+from chariot_base.utilities import Tracer, open_config_file
 
 
 class LogDigester(LocalConnector):
@@ -142,50 +143,40 @@ STOP = asyncio.Event()
 
 
 def ask_exit(*args):
-    print('Stoping....')
+    logging.info('Stoping....')
     STOP.set()
 
 
 async def main(args=None):
-    # Initialize connection to southbound
-    filename = None
-    for name in ['./config.json', './tests/config.json']:
-      if os.path.isfile(name):
-        filename = name
+    opts = open_config_file()
+
+    mqtt_options = opts.brokers.southbound
+    options_watson = opts.watson_iot
+    options_db = opts.local_storage
+    options_dispatcher = opts.dispatcher
+    options_tracer = opts.tracer
     
-    if filename is None:
-      raise Exception('Configuration file is not exists')
-    
-    with open('./tests/config.json', 'r') as read_file:
-      OPTS = json.load(read_file)
+    client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
 
-      mqtt_options = OPTS['mosquitto']
-      options_watson = OPTS['watson_iot']
-      options_db = OPTS['local_storage']
-      options_dispatcher = OPTS['dispatcher']
-      options_tracer = OPTS['tracer']
+    client = gmqtt.Client(client_id, clean_session=True)
+    await client.connect(host=mqtt_options['host'], port=mqtt_options['port'], version=4)
 
-      client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
+    logger = LogDigester(options_dispatcher)
+    logger.register_for_client(client)
+    logger.set_up_local_storage(options_db)
+    if options_tracer['enabled']:
+        logger.set_up_tracer(options_tracer)
+    if options_watson['enabled']:
+        logger.set_up_watson(options_watson['client'])
 
-      client = gmqtt.Client(client_id, clean_session=True)
-      await client.connect(host=mqtt_options['host'], port=mqtt_options['port'], version=4)
+    logger.subscribe(options_dispatcher['listen'], qos=2)
 
-      logger = LogDigester(options_dispatcher)
-      logger.register_for_client(client)
-      logger.set_up_local_storage(options_db)
-      if options_tracer['enabled']:
-          logger.set_up_tracer(options_tracer)
-      if options_watson['enabled']:
-          logger.set_up_watson(options_watson['client'])
+    for key, value in options_dispatcher['gateways_ids'].items():
+        logger.subscribe(key, qos=2)
 
-      logger.subscribe(options_dispatcher['listen'], qos=2)
-
-      for key, value in options_dispatcher['gateways_ids'].items():
-          logger.subscribe(key, qos=2)
-
-      print('Waiting message from Gateway')
-      await STOP.wait()
-      await client.disconnect()
+    logging.info('Waiting message from Gateway')
+    await STOP.wait()
+    await client.disconnect()
 
 
 if __name__ == '__main__':
@@ -195,4 +186,4 @@ if __name__ == '__main__':
     loop.add_signal_handler(signal.SIGTERM, ask_exit)
     
     loop.run_until_complete(main())
-    print('Stopped....')
+    logging.info('Stopped....')
