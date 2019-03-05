@@ -1,5 +1,3 @@
-.. highlight:: shell
-
 =============================
 CharIoT Southbound Dispatcher
 =============================
