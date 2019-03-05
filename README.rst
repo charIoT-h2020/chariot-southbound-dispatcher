@@ -136,8 +136,7 @@ Send message to mqtt broker
 
 .. code-block:: shell
 
-    $ mosquitto_pub -m '{"d": {"temperature": -10.0, "humidity": 40.0}}' -t dispatcher/temp:001
-    $ mosquitto_pub -m '{"d":{"din01":1,"din02":1,"din03":0,"din04":0,"din05":0,"din06":0,"din07":0,"din08":0,"din09":0,"din10":0,"din11":0,"din12":0,"din13":0,"din14":0,"din15":0,"din16":0,"ain01":2064,"ain02":0,"ain03":0,"ain04":0,"ain05":0,"ain06":0,"ain07":0,"ain08":0,"temperature":28.4,"humidity":44.1,"battery_voltage":9296}}' -t iot-2/evt/nms_status/fmt/json
+    $ mosquitto_pub -m '{"11:ac:a2:1a:9d:d6": {"fixedIO": { "din01": 1, "din02": 0 }}}' -t iot-2/evt/nms_status/fmt/json
 
 Features
 --------

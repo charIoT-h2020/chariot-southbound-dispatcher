@@ -6,4 +6,4 @@ WORKDIR /usr/src/app
 COPY . .
 
 RUN apk add gnupg gcc g++ make python3-dev libffi-dev openssl-dev gmp-dev && pip install pytest && python setup.py install
-CMD ["python", "-m", "chariot_southbound_dispatcher.digester.logs"]
+CMD ["python", "./chariot_southbound_dispatcher/digester/logs.py"]
