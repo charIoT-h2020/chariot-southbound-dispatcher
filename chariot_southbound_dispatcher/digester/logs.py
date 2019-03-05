@@ -23,6 +23,7 @@ class LogDigester(LocalConnector):
         self.tracer = None
 
         self.gateways_ids = options['gateways_ids']
+        self.engines = options['engines']
 
     def on_message(self, client, topic, payload, qos, properties):
         try:
@@ -61,7 +62,8 @@ class LogDigester(LocalConnector):
             }
             msg = json.dumps(message_meta)
             logging.debug('Send message: %s' % msg)
-            self.publish('privacy', msg)
+            for engine in engines:
+                self.publish(engine, msg)
             
             self.close_span(span)
         except:

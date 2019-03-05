@@ -37,6 +37,9 @@
         "gateways_ids": {
             "iot-2/evt/nms_status/fmt/json": "5410ec4d1601"
         },
+        "engines": [
+            "privacy"
+        ],
         "database": "fog_logs",
         "table": "message",
         "listen": "dispatcher/#"
