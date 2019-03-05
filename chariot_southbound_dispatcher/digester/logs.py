@@ -42,26 +42,17 @@ class LogDigester(LocalConnector):
     def forward_to_engines(self, point, topic, child_span):
         try:
             span = self.start_span('forward_to_engines', child_span)
-            sensor_type, _ = self.get_sensor_info(topic)
-            span.set_tag('sensor_type', sensor_type)
+            # sensor_type, _ = self.get_sensor_info(topic)
+            # span.set_tag('sensor_type', sensor_type)
             span.set_tag('sensor_id', point.sensor_id)
             span.set_tag('package_id', point.id)
-            if sensor_type == 0:
-                for attr in point.message:
-                    message_meta = {
-                        'package_id': point.id,
-                        'timestamp': point.timestamp,
-                        'value': point.message[attr],
-                        'sensor_id': '%s_%s' % (point.sensor_id, attr)
-                    }
-                    self.publish('privacy', json.dumps(message_meta))
-            else:
-                message_meta = {
-                    'package_id': point.id,
-                    'value': point.message,
-                    'sensor_id': point.sensor_id
-                }
-                self.publish('privacy', json.dumps(message_meta))
+            message_meta = {
+                'package_id': point.id,
+                'timestamp': point.timestamp,
+                'value': point.message,
+                'sensor_id': point.sensor_id
+            }
+            self.publish('privacy', json.dumps(message_meta))
             
             self.close_span(span)
         except:
@@ -117,26 +108,14 @@ class LogDigester(LocalConnector):
             options['host'], options['port'], options['username'], options['password'], options['database']
         )
 
-    def to_data_point(self, message, topic):
-        _, sensor_id = self.get_sensor_info(topic)
-        topic = topic.replace('dispatcher/', '')
+    def to_data_point(self, message, topic):    
+        point = self.point_factory.from_json_string(message)
 
-        if topic in self.gateways_ids:
-            point = self.point_factory.from_json_string(message, 'd')
-        else:
-            point = self.point_factory.from_json_string(message)
-
-        point.sensor_id = sensor_id
+        if point.sensor_id is None:
+            point.sensor_id = topic
+        
         point.id = str(point.id)
         return point
-
-    def get_sensor_info(self, topic):
-        topic = topic.replace('dispatcher/', '')
-
-        if topic in self.gateways_ids:
-            return 0, self.gateways_ids[topic]
-        else:
-            return 1, topic
 
 
 STOP = asyncio.Event()
