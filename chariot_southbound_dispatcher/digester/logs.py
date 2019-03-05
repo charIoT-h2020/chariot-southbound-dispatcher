@@ -61,8 +61,9 @@ class LogDigester(LocalConnector):
                 'sensor_id': point.sensor_id
             }
             msg = json.dumps(message_meta)
-            logging.debug('Send message: %s' % msg)
-            for engine in engines:
+            
+            for engine in self.engines:
+                logging.debug('Send message to %s engine: %s' % (engine, msg))
                 self.publish(engine, msg)
             
             self.close_span(span)
