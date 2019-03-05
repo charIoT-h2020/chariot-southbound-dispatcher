@@ -28,7 +28,7 @@ Models
 ------
 
 Gateway message
-^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~
 
 We expect messages from PANTHORA gateway in a JSON document.
 
@@ -118,7 +118,7 @@ The last example is a message from not authenticated sensor connected via WiFi.
     }
 
 Southbound Package Model
-^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 The message format sent by southbound dispatcher is the following:
 
