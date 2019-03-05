@@ -27,13 +27,22 @@ class LogDigester(LocalConnector):
     def on_message(self, client, topic, payload, qos, properties):
         try:
             span = self.start_span('on_message')
-            span.set_tag('topic', topic)
-            point = self.to_data_point(payload, topic)
-            span.set_tag('package_id', point.id)
-            self.store_to_local(point, span)
-            self.forward_to_engines(point, topic, span)
-            self.store_to_global(point, span)
-            span.set_tag('is_ok', True)
+            points = self.to_data_point(payload, topic)
+
+            for point in points:
+                point_span = self.start_span('handle_measurement', span)
+                point_span.set_tag('topic', topic)
+                point_span.set_tag('package_id', point.id)
+
+                try:
+                    self.store_to_local(point, point_span)
+                    self.forward_to_engines(point, topic, point_span)
+                    self.store_to_global(point, point_span)
+                    point_span.set_tag('is_ok', True)
+                except:
+                    point_span.set_tag('is_ok', False)
+                self.close_span(point_span)
+
             self.close_span(span)
         except:
             span.set_tag('is_ok', False)
@@ -42,8 +51,6 @@ class LogDigester(LocalConnector):
     def forward_to_engines(self, point, topic, child_span):
         try:
             span = self.start_span('forward_to_engines', child_span)
-            # sensor_type, _ = self.get_sensor_info(topic)
-            # span.set_tag('sensor_type', sensor_type)
             span.set_tag('sensor_id', point.sensor_id)
             span.set_tag('package_id', point.id)
             message_meta = {
@@ -52,7 +59,9 @@ class LogDigester(LocalConnector):
                 'value': point.message,
                 'sensor_id': point.sensor_id
             }
-            self.publish('privacy', json.dumps(message_meta))
+            msg = json.dumps(message_meta)
+            logging.debug('Send message: %s' % msg)
+            self.publish('privacy', msg)
             
             self.close_span(span)
         except:
@@ -108,14 +117,25 @@ class LogDigester(LocalConnector):
             options['host'], options['port'], options['username'], options['password'], options['database']
         )
 
-    def to_data_point(self, message, topic):    
-        point = self.point_factory.from_json_string(message)
+    def to_data_point(self, message, topic):
+        points = self.point_factory.from_json_string(message)
 
-        if point.sensor_id is None:
-            point.sensor_id = topic
+        i = 0
+        for point in points:
+            point.id = str(point.id)
+            if point.sensor_id is None:
+                point.sensor_id = topic
+            i = i + 1
         
-        point.id = str(point.id)
-        return point
+        return points
+
+    def get_sensor_info(self, topic):
+        topic = topic.replace('dispatcher/', '')
+
+        if topic in self.gateways_ids:
+            return 0, self.gateways_ids[topic]
+        else:
+            return 1, topic
 
 
 STOP = asyncio.Event()

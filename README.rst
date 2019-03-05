@@ -24,8 +24,11 @@ Features
 * Store message to the cloud database instance
 * Forward message to the engine
 
-Message
---------------
+Models
+------
+
+Gateway message
+^^^^^^^^^^^^^^^
 
 We expect messages from PANTHORA gateway in a JSON document.
 
@@ -114,6 +117,22 @@ The last example is a message from not authenticated sensor connected via WiFi.
         }
     }
 
+Southbound Package Model
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The message format sent by southbound dispatcher is the following:
+
+.. code-block:: shell
+
+    {
+        "package_id": "<unique-guid>",
+        "timestamp": "2019-03-05T12:08:26.888375",
+        "value": {
+            "din01": 1, 
+            "din02": 0
+        }, 
+        "sensor_id": "<gateway_mac_address>"
+    }
 
 How to use
 ----------
