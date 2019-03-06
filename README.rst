@@ -204,9 +204,6 @@ Send message to mqtt broker
     # Send example message as gateway did
     $ mosquitto_pub -m '{"52:80:6c:75:c3:fd": {"wifi": {"wifiStatusCode": 0, "wifiStatusText": "Wifi online", "sensorData": {"sensorName": "Sensor01","sensorStatusCode": 0,"sensorStatusText": "Sensor online","sensorValues": [{"name": "Temperature","value": 18.2}]}}}}' -t iot-2/evt/nms_status/fmt/json
 
-Features
---------
-
 Credits
 -------
 
