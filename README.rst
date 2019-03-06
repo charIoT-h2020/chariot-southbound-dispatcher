@@ -155,7 +155,11 @@ Send message to mqtt broker
 
 .. code-block:: shell
 
+    # Send example message as gateway did
     $ mosquitto_pub -m '{"11:ac:a2:1a:9d:d6": {"fixedIO": { "din01": 1, "din02": 0 }}}' -t iot-2/evt/nms_status/fmt/json
+
+    # Send example message as gateway did
+    $ mosquitto_pub -m '{"52:80:6c:75:c3:fd": {"wifi": {"wifiStatusCode": 0, "wifiStatusText": "Wifi online", "sensorData": {"sensorName": "Sensor01","sensorStatusCode": 0,"sensorStatusText": "Sensor online","sensorValues": [{"name": "Temperature","value": 18.2}]}}}}' -t iot-2/evt/nms_status/fmt/json
 
 Features
 --------
