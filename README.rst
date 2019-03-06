@@ -137,6 +137,30 @@ The message format sent by southbound dispatcher is the following:
 Configuration
 -------------
 
+Dispatcher
+~~~~~~~~~~
+
+Configuration options related to the dispatcher.
+
+.. code-block:: shell
+
+    {
+        ...
+        "dispatcher": {
+            "gateways_ids": {
+                "iot-2/evt/nms_status/fmt/json": ""
+            },
+            "engines": [
+                "privacy",
+                "safety"
+            ],
+            "database": "fog_logs",
+            "table": "message",
+            "listen": "dispatcher/#"
+        },
+        ...
+    }
+
 dispatcher.gateways_ids
     A list of different gateway send message to the Fog Node.
 
