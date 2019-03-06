@@ -35,10 +35,11 @@
     },
     "dispatcher": {
         "gateways_ids": {
-            "iot-2/evt/nms_status/fmt/json": "5410ec4d1601"
+            "iot-2/evt/nms_status/fmt/json": ""
         },
         "engines": [
-            "privacy"
+            "privacy",
+            "safety"
         ],
         "database": "fog_logs",
         "table": "message",
@@ -49,5 +50,39 @@
         "enabled": true,
         "port": 5775,
         "service": "southbound-dispatcher"
+    },
+    "logging": {
+        "version": 1,
+        "handlers": {            
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "console"
+            }
+        },
+        "loggers": {
+            "chariot_southbound_dispatcher.digester": {
+                "level": "DEBUG",
+                "handlers": [
+                    "console"
+                ]
+            }
+        },
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "console"
+            ]
+        },
+        "formatters": {
+            "file": {
+                "format": "%(asctime)s (%(levelname)s) %(name)s : %(message)s"
+            },
+            "console": {
+                "format": "%(levelname)s: %(message)s"
+            },
+            "debug": {
+                "format": "%(asctime)s (%(levelname)s) %(name)s : %(message)s"
+            }
+        }
     }
 }
