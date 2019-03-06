@@ -128,11 +128,30 @@ The message format sent by southbound dispatcher is the following:
         "package_id": "<unique-guid>",
         "timestamp": "2019-03-05T12:08:26.888375",
         "value": {
-            "din01": 1, 
-            "din02": 0
+            "<metric1_id>": <metric1_value>, 
+            "<metric2_id>": <metric2_value>
         }, 
         "sensor_id": "<gateway_mac_address>"
     }
+
+Configuration
+-------------
+
+dispatcher.gateways_ids
+    A list of different gateway send message to the Fog Node.
+
+dispatcher.engines
+    The dispatcher send each new message to the engine defined in this list.
+
+dispatcher.database
+    The name of database where the message are stored.
+
+dispatcher.table
+    The name of table where the message are stored.
+
+dispatcher.listen
+    The central topic the dispatcher listen for message.
+
 
 How to use
 ----------
