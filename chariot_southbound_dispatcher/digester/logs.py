@@ -60,6 +60,7 @@ class LogDigester(LocalConnector):
                 'value': point.message,
                 'sensor_id': point.sensor_id
             }
+            self.inject_to_message(span, message_meta)
             msg = json.dumps(message_meta)
             
             for engine in self.engines:
