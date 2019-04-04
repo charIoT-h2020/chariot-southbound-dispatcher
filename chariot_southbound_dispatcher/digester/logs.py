@@ -27,6 +27,8 @@ class LogDigester(LocalConnector):
         self.gateways_ids = options['gateways_ids']
         self.engines = options['engines']
 
+        if 'engines' not in options:
+            raise Exception('engines is missing')
     def on_message(self, client, topic, payload, qos, properties):
         try:
             span = self.start_span('on_message')
@@ -34,29 +36,30 @@ class LogDigester(LocalConnector):
 
             for point in points:
                 point_span = self.start_span('handle_measurement', span)
-                point_span.set_tag('topic', topic)
-                point_span.set_tag('package_id', point.id)
+                self.set_tag(point_span, 'topic', topic)
+                self.set_tag(point_span, 'package_id', point.id)
 
                 try:
                     self.store_to_local(point, point_span)
                     self.forward_to_engines(point, topic, point_span)
                     self.store_to_global(point, point_span)
-                    point_span.set_tag('is_ok', True)
+                    self.set_tag(point_span, 'is_ok', True)
                 except:
-                    point_span.set_tag('is_ok', False)
+                    self.set_tag(point_span, 'is_ok', False)
                     self.error(span, ex, False)
                 self.close_span(point_span)
 
             self.close_span(span)
         except Exception as ex:
-            span.set_tag('is_ok', False)
+            logging.error(ex)
+            self.set_tag(span, 'is_ok', False)
             self.error(span, ex)
 
     def forward_to_engines(self, point, topic, child_span):
         try:
             span = self.start_span('forward_to_engines', child_span)
-            span.set_tag('sensor_id', point.sensor_id)
-            span.set_tag('package_id', point.id)
+            self.set_tag(span, 'sensor_id', point.sensor_id)
+            self.set_tag(span, 'package_id', point.id)
             message_meta = {
                 'package_id': point.id,
                 'timestamp': point.timestamp,
@@ -72,7 +75,7 @@ class LogDigester(LocalConnector):
 
             self.close_span(span)
         except:
-            span.set_tag('is_ok', False)
+            self.set_tag(span, 'is_ok', False)
             self.close_span(span)
             raise
 
@@ -84,13 +87,13 @@ class LogDigester(LocalConnector):
 
         try:
             span = self.start_span('store_to_local', child_span)
-            span.set_tag('package_id', point.id)
+            self.set_tag(span, 'package_id', point.id)
             result = self.local_storage.publish(point)
-            span.set_tag('is_ok', result)
+            self.set_tag(span, 'is_ok', result)
             self.close_span(span)
             return result
         except:
-            span.set_tag('is_ok', False)
+            self.set_tag(span, 'is_ok', False)
             self.close_span(span)
             raise
 
@@ -102,13 +105,13 @@ class LogDigester(LocalConnector):
 
         try:
             span = self.start_span('store_to_global', child_span)
-            span.set_tag('package_id', point.id)
+            self.set_tag(span, 'package_id', point.id)
             result = self.connector.publish(point)
-            span.set_tag('is_ok', result)
+            self.set_tag(span, 'is_ok', result)
             self.close_span(span)
             return result
         except:
-            span.set_tag('is_ok', False)
+            self.set_tag(span, 'is_ok', False)
             self.close_span(span)
             raise
 
@@ -134,7 +137,8 @@ class LogDigester(LocalConnector):
             alert_msg = 'Package from unauthenticated sensor \'%s\'' % ex.id
             alert = Alert('unauthenticated_sensor', alert_msg, 100)
             alert.sensor_id = ex.id
-            self.northbound.publish('alerts', json.dumps(self.inject_to_message(span, alert.dict())))
+            self.northbound.publish('alerts', json.dumps(
+                self.inject_to_message(span, alert.dict())))
             logging.debug('UnAuthenticatedSensor %s' % ex.id)
             return []
 
@@ -189,9 +193,11 @@ async def main(args=None):
     logger.set_up_local_storage(options_db)
     logger.register_northbound(northbound)
     if options_tracer['enabled'] is True:
+        logging.info('Enabling tracing')
         logger.set_up_tracer(options_tracer)
         northbound.inject_tracer(logger.tracer)
     if options_watson['enabled'] is True:
+        logging.info('Enabling watson forwarding')
         logger.set_up_watson(options_watson['client'])
 
     logger.subscribe(options_dispatcher['listen'], qos=2)
