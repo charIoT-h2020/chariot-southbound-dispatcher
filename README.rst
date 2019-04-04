@@ -134,20 +134,51 @@ The message format sent by southbound dispatcher is the following:
         "sensor_id": "<gateway_mac_address>"
     }
 
+Alerts
+------
+
+When southbound dispatcher received message from non authenticated sensor, it will raise an alert for Fog Node Administrator. 
+In the following snippet you see an example of an alert generate by it.
+
+.. code-block:: json
+
+    {
+        "time": "2019-04-04T15:01:31.711862016Z",
+        "id": "df009643-8d0b-4ea3-aee5-6772e55ea8f5",
+        "message": "Package from unauthenticated sensor 'device_52806c75c3fd_Sensor02'",
+        "name": "unauthenticated_sensor",
+        "sensor_id": "device_52806c75c3fd_Sensor02",
+        "severity": 100
+    }
+
+
 Health Check
 ------------
 
 In order to check if the southbound dispatcher is working you need to send a message to it and wait to answer back.
 
-... code-block: shell
-    mosquitto_pub -h <southbound_broker_hostname> -p 1883 -m '{"id": "3ab0e795-78da-433d-8cec-0e84300a688b", "destination": "test", "timestamp": "2019-04-04T13:12:42.531931"}' -t dispatcher/_health
+.. code-block:: shell
+
+    $ mosquitto_pub -h <southbound_broker_hostname> -p 1883 -m \
+    '{"id": "<unique-guid>", "destination": "test", "timestamp": "2019-04-04T13:12:42.531931"}' \
+    -t dispatcher/_health
 
 And you are waiting for response with the following command.
 
-... code-block: shell
-    mosquitto_sub -h <southbound_broker_hostname> -p 1883 -t 'test'
+.. code-block:: shell
 
-    > {"id": "3ab0e795-78da-433d-8cec-0e84300a688b", "name": "southbound-dispatcher", "status": {"code": 0, "message": "running"}, "received": "2019-04-04T13:13:11.883693", "sended": "2019-04-04T13:12:42.531931"}
+    $ mosquitto_sub -h <southbound_broker_hostname> -p 1883 -t 'test'
+
+    {
+        "id": "<unique-guid>", 
+        "name": "southbound-dispatcher", 
+        "status": {
+            "code": 0, 
+            "message": "running"
+        }, 
+        "received": "2019-04-04T13:13:11.883693", 
+        "sended": "2019-04-04T13:12:42.531931"
+    }
 
 
 Check health message request payload
@@ -202,6 +233,10 @@ Configuration options related to the dispatcher.
     {
         ...
         "dispatcher": {
+            "name": "southbound-dispatcher",
+            "health": {
+                "endpoint": "dispatcher/_health"
+            },
             "gateways_ids": {
                 "iot-2/evt/nms_status/fmt/json": ""
             },
