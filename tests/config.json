@@ -15,7 +15,7 @@
         }
     },
     "local_storage": {
-        "host": "192.168.2.24",
+        "host": "linux.machine",
         "port": 8086,
         "username": "root",
         "password": "root",
@@ -23,19 +23,19 @@
     },
     "brokers": {
         "southbound": {
-            "host": "192.168.2.24",
+            "host": "linux.machine",
             "port": 1883,
             "username": ""
         },
         "northbound": {
-            "host": "192.168.2.24",
-            "port": 1883,
+            "host": "linux.machine",
+            "port": 1884,
             "username": ""
         }
     },
     "dispatcher": {
-        "gateways_ids": {
-            "iot-2/evt/nms_status/fmt/json": ""
+        "gateways_ids": { 
+            "iot-2/evt/nms_status/fmt/json": "5410ec4d1601"
         },
         "engines": [
             "privacy",
@@ -46,7 +46,7 @@
         "listen": "dispatcher/#"
     },
     "tracer" : {
-        "host": "192.168.2.24",
+        "host": "linux.machine",
         "enabled": true,
         "port": 5775,
         "service": "southbound-dispatcher"

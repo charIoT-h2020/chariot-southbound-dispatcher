@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os  
+import os
 import uuid
 import json
 import gmqtt
@@ -8,19 +8,21 @@ import asyncio
 import signal
 import logging
 
-from chariot_base.connector import WatsonConnector, LocalConnector
-from chariot_base.model import DataPointFactory
 from chariot_base.datasource import LocalDataSource
 from chariot_base.utilities import Tracer, open_config_file
+from chariot_base.model import Alert, DataPointFactory, UnAuthenticatedSensor
+from chariot_base.connector import WatsonConnector, LocalConnector, create_client
 
 
 class LogDigester(LocalConnector):
     def __init__(self, options):
         super(LogDigester, self).__init__()
         self.connector = None
-        self.point_factory = DataPointFactory(options['database'], options['table'])
+        self.point_factory = DataPointFactory(
+            options['database'], options['table'])
         self.local_storage = None
         self.tracer = None
+        self.northbound = None
 
         self.gateways_ids = options['gateways_ids']
         self.engines = options['engines']
@@ -28,7 +30,7 @@ class LogDigester(LocalConnector):
     def on_message(self, client, topic, payload, qos, properties):
         try:
             span = self.start_span('on_message')
-            points = self.to_data_point(payload, topic)
+            points = self.to_data_point(payload, topic, span)
 
             for point in points:
                 point_span = self.start_span('handle_measurement', span)
@@ -42,12 +44,13 @@ class LogDigester(LocalConnector):
                     point_span.set_tag('is_ok', True)
                 except:
                     point_span.set_tag('is_ok', False)
+                    self.error(span, ex, False)
                 self.close_span(point_span)
 
             self.close_span(span)
-        except:
+        except Exception as ex:
             span.set_tag('is_ok', False)
-            self.close_span(span)
+            self.error(span, ex)
 
     def forward_to_engines(self, point, topic, child_span):
         try:
@@ -62,11 +65,11 @@ class LogDigester(LocalConnector):
             }
             self.inject_to_message(span, message_meta)
             msg = json.dumps(message_meta)
-            
+
             for engine in self.engines:
                 logging.debug('Send message to %s engine: %s' % (engine, msg))
                 self.publish(engine, msg)
-            
+
             self.close_span(span)
         except:
             span.set_tag('is_ok', False)
@@ -98,7 +101,7 @@ class LogDigester(LocalConnector):
             return False
 
         try:
-            span = self.start_span('store_to_global', child_span)            
+            span = self.start_span('store_to_global', child_span)
             span.set_tag('package_id', point.id)
             result = self.connector.publish(point)
             span.set_tag('is_ok', result)
@@ -108,6 +111,9 @@ class LogDigester(LocalConnector):
             span.set_tag('is_ok', False)
             self.close_span(span)
             raise
+
+    def register_northbound(self, northbound):
+        self.northbound = northbound
 
     def set_up_watson(self, options):
         self.connector = WatsonConnector(options)
@@ -121,8 +127,16 @@ class LogDigester(LocalConnector):
             options['host'], options['port'], options['username'], options['password'], options['database']
         )
 
-    def to_data_point(self, message, topic):
-        points = self.point_factory.from_json_string(message)
+    def to_data_point(self, message, topic, span=None):
+        try:
+            points = self.point_factory.from_json_string(message)
+        except UnAuthenticatedSensor as ex:
+            alert_msg = 'Package from unauthenticated sensor \'%s\'' % ex.id
+            alert = Alert('unauthenticated_sensor', alert_msg, 100)
+            alert.sensor_id = ex.id
+            self.northbound.publish('alerts', json.dumps(self.inject_to_message(span, alert.dict())))
+            logging.debug('UnAuthenticatedSensor %s' % ex.id)
+            return []
 
         i = 0
         for point in points:
@@ -130,7 +144,7 @@ class LogDigester(LocalConnector):
             if point.sensor_id is None:
                 point.sensor_id = topic
             i = i + 1
-        
+
         return points
 
     def get_sensor_info(self, topic):
@@ -140,6 +154,12 @@ class LogDigester(LocalConnector):
             return 0, self.gateways_ids[topic]
         else:
             return 1, topic
+
+
+class NorthboundConnector(LocalConnector):
+    def __init__(self):
+        super(NorthboundConnector, self).__init__()
+        self.engine = None
 
 
 STOP = asyncio.Event()
@@ -153,23 +173,25 @@ def ask_exit(*args):
 async def main(args=None):
     opts = open_config_file()
 
-    mqtt_options = opts.brokers.southbound
     options_watson = opts.watson_iot
     options_db = opts.local_storage
     options_dispatcher = opts.dispatcher
     options_tracer = opts.tracer
-    
-    client_id = '%s_chariot_southbound_dispatcher' % uuid.uuid4()
 
-    client = gmqtt.Client(client_id, clean_session=True)
-    await client.connect(host=mqtt_options['host'], port=mqtt_options['port'], version=4)
+    client_south = await create_client(opts.brokers.southbound, '_chariot_southbound_dispatcher')
+    client_north = await create_client(opts.brokers.northbound, '_chariot_northbound_dispatcher')
+
+    northbound = NorthboundConnector()
+    northbound.register_for_client(client_north)
 
     logger = LogDigester(options_dispatcher)
-    logger.register_for_client(client)
+    logger.register_for_client(client_south)
     logger.set_up_local_storage(options_db)
-    if options_tracer['enabled']:
+    logger.register_northbound(northbound)
+    if options_tracer['enabled'] is True:
         logger.set_up_tracer(options_tracer)
-    if options_watson['enabled']:
+        northbound.inject_tracer(logger.tracer)
+    if options_watson['enabled'] is True:
         logger.set_up_watson(options_watson['client'])
 
     logger.subscribe(options_dispatcher['listen'], qos=2)
@@ -179,14 +201,14 @@ async def main(args=None):
 
     logging.info('Waiting message from Gateway')
     await STOP.wait()
-    await client.disconnect()
+    await client_south.disconnect()
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    
+
     loop.add_signal_handler(signal.SIGINT, ask_exit)
     loop.add_signal_handler(signal.SIGTERM, ask_exit)
-    
+
     loop.run_until_complete(main())
     logging.info('Stopped....')
