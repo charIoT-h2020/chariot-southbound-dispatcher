@@ -9,7 +9,7 @@ import signal
 import logging
 
 from chariot_base.datasource import LocalDataSource
-from chariot_base.utilities import Tracer, open_config_file
+from chariot_base.utilities import Tracer, open_config_file, HealthCheck
 from chariot_base.model import Alert, DataPointFactory, UnAuthenticatedSensor
 from chariot_base.connector import WatsonConnector, LocalConnector, create_client
 
@@ -17,6 +17,7 @@ from chariot_base.connector import WatsonConnector, LocalConnector, create_clien
 class LogDigester(LocalConnector):
     def __init__(self, options):
         super(LogDigester, self).__init__()
+        self.options = options
         self.connector = None
         self.point_factory = DataPointFactory(
             options['database'], options['table'])
@@ -24,14 +25,24 @@ class LogDigester(LocalConnector):
         self.tracer = None
         self.northbound = None
 
+        if 'health' in options:
+            logging.info('Enabling health checks endpoints')
+            self.health = HealthCheck(options['name']).inject_connector(self)
+            self.healthTopic = options['health']['endpoint']
+
         self.gateways_ids = options['gateways_ids']
         self.engines = options['engines']
 
         if 'engines' not in options:
             raise Exception('engines is missing')
-    def on_message(self, client, topic, payload, qos, properties):
+
+    def on_message(self, client, topic, payload, qos, properties):        
+        if topic == self.healthTopic:
+            self.health.do(payload)
+            return
+
+        span = self.start_span('on_message')
         try:
-            span = self.start_span('on_message')
             points = self.to_data_point(payload, topic, span)
 
             for point in points:

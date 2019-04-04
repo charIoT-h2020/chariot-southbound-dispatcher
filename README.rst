@@ -134,6 +134,61 @@ The message format sent by southbound dispatcher is the following:
         "sensor_id": "<gateway_mac_address>"
     }
 
+Health Check
+------------
+
+In order to check if the southbound dispatcher is working you need to send a message to it and wait to answer back.
+
+... code-block: shell
+    mosquitto_pub -h <southbound_broker_hostname> -p 1883 -m '{"id": "3ab0e795-78da-433d-8cec-0e84300a688b", "destination": "test", "timestamp": "2019-04-04T13:12:42.531931"}' -t dispatcher/_health
+
+And you are waiting for response with the following command.
+
+... code-block: shell
+    mosquitto_sub -h <southbound_broker_hostname> -p 1883 -t 'test'
+
+    > {"id": "3ab0e795-78da-433d-8cec-0e84300a688b", "name": "southbound-dispatcher", "status": {"code": 0, "message": "running"}, "received": "2019-04-04T13:13:11.883693", "sended": "2019-04-04T13:12:42.531931"}
+
+
+Check health message request payload
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+id
+    A unique id for the specific health check request.
+
+destination
+    Where you expecting your answer.
+
+timestamp
+    When you sent the request.
+
+Check health message response payload
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+id
+    A unique id for the specific health check request.
+
+name
+    A unique name of the service.    
+
+status.code
+    Status code of running state, 0 for all are ok otherwise the service had running issues.
+
+status.message
+    A message of health state of the service.
+
+destination
+    Where you expecting your answer.
+
+received
+    When the service received your request.
+
+received
+    When you sent the request.
+
+uber-trace-id
+    Jaeger tracing id if tracing is enabled.
+
 Configuration
 -------------
 

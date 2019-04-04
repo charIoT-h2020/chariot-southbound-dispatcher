@@ -34,6 +34,10 @@
         }
     },
     "dispatcher": {
+        "name": "southbound-dispatcher",
+        "health": {
+            "endpoint": "dispatcher/_health"
+        },
         "gateways_ids": { 
             "iot-2/evt/nms_status/fmt/json": "5410ec4d1601"
         },
