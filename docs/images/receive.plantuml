@@ -1,0 +1,42 @@
+@startuml
+hide footbox
+
+skinparam monochrome true
+
+participant "Gateway" as gate
+participant "Southbound Dispatcher" as sd 
+participant "Alert Digester" as al 
+database "Cloudant" as cloud
+database "InfluxDB" as influxdb 
+collections "Engines" as eng
+participant "Open tracing" as op 
+
+gate -> sd ++: Forward packet
+sd -> op ++: Start execution span
+
+alt From unauthenticated sensor
+    sd -> al++: Raise alert
+    al -> influxdb ++: Store alert
+    influxdb --> al --: OK
+    deactivate al
+else
+    sd -> cloud ++: Save package
+    cloud --> sd --: OK
+    sd -> influxdb ++: Save package
+    influxdb --> al --: OK
+    sd -> eng ++: Forward packet
+    alt Faulty package
+        eng -> al ++: Raise alert
+        al -> influxdb ++: Store alert
+        influxdb --> al --: OK
+        deactivate al
+    else
+        eng ->]: Forward package
+        deactivate eng
+    end
+end
+
+sd ->x op: Close execution span
+deactivate sd
+deactivate op
+@enduml
