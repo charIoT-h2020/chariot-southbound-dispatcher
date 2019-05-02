@@ -24,11 +24,8 @@ Features
 * Store message to the cloud database instance
 * Forward message to the engine
 
-Models
-------
-
-Gateway message
-~~~~~~~~~~~~~~~
+Incoming messages
+-----------------
 
 We expect messages from PANTHORA gateway in a JSON document.
 
@@ -117,8 +114,8 @@ The last example is a message from not authenticated sensor connected via WiFi.
         }
     }
 
-Southbound Package Model
-~~~~~~~~~~~~~~~~~~~~~~~~
+Southbound Package
+------------------
 
 The message format sent by southbound dispatcher is the following:
 
