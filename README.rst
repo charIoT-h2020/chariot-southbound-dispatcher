@@ -31,65 +31,53 @@ We expect messages from PANTHORA gateway in a JSON document.
 
 The following example is a message from the gateway, it contains values from sensor connected via wire on the gateway.
 
+The **gateway_mac_address** has the following pattern **NMS_801F122F1114**, because if it has started by number causes issues on serialization.
+
+
 .. code-block:: shell
 
     {
         "<gateway_mac_addres>": {
             "fixedIO": {
                 "din01": 0,
-                "din02": 0,
-                "din03": 0,
-                "din04": 0,
-                "din05": 0,
-                "din06": 0,
-                "din07": 0,
-                "din08": 0,
-                "din09": 0,
-                "din10": 0,
-                "din11": 0,
-                "din12": 0,
-                "din13": 0,
-                "din14": 0,
-                "din15": 0,
+                ...
                 "din16": 0,
                 "ain01": 2060,
-                "ain02": 2045,
-                "ain03": 1291,
-                "ain04": 1554,
-                "ain05": 1652,
-                "ain06": 1777,
-                "ain07": 1926,
+                ...
                 "ain08": 1417
             }
         }
     }
 
-The next example is a message from authenticated sensor connected via WiFi.
+The next example is a message from authenticated smart sensor. The **connection_type** can be wifi or ble.
 
 .. code-block:: shell
 
     {
         "<gateway_mac_address>": {
-            "wifi": {
-            "wifiStatusCode": 0,
-            "wifiStatusText": "Wifi online",
-            "sensorData": {
-                "sensorName": "Sensor01",
-                "sensorStatusCode": 0,
-                "sensorStatusText": "Sensor online",
-                "sensorValues": [
-                    {
-                        "name": "Temperature",
-                        "value": "18.2"
-                    },
-                    {
-                        "name": "Humidity",
-                        "value": "37"
-                    },
-                    {
-                        "name": "BatteryVoltage",
-                        "value": "8.3"
-                    }
+            "<connection_type>": {
+                "<connection_type>StatusCode": 0,
+                "<connection_type>StatusText": "<connection_type> online",
+                "sensorData": {
+                    "sensorName": "Sensor01",
+                    "sensorStatusCode": 0,
+                    "sensorStatusText": "Sensor online",
+                    "sensorValues": [
+                        {
+                            "name": "Temperature",
+                            "value": "18.2",
+                            "unit": "Celsius"
+                        },
+                        {
+                            "name": "Humidity",
+                            "value": "37",
+                            "unit": "%"
+                        },
+                        {
+                            "name": "BatteryVoltage",
+                            "value": "8.3",
+                            "unit": "Volts"
+                        }
                     ]
                 }
             }
@@ -102,9 +90,9 @@ The last example is a message from not authenticated sensor connected via WiFi.
 
     {
         "<gateway_mac_address>": {
-            "wifi": {
-              "wifiStatusCode": 0,
-              "wifiStatusText": "wifi online",
+            "<connection_type>": {
+              "<connection_type>StatusCode": 0,
+              "<connection_type>StatusText": "<connection_type> online",
               "sensorData": {
                 "sensorName": "Sensor01",
                 "sensorStatusCode": 2,
@@ -113,6 +101,59 @@ The last example is a message from not authenticated sensor connected via WiFi.
             }
         }
     }
+    
+The following table descibes the error codes.
+    
+.. list-table::
+   :widths: 50 50
+   :header-rows: 1
+
+   * - sensorStatusCode
+     - sensorStatusText
+   * - 1
+     - "Undetectable sensor"
+   * - 2
+     - "Sensor without authentication"
+
+
+Sensor firmware update Message
+------------------------------
+
+The gateway send message to the Southbound Dispatcher to update the status of firmware upgrading, the following
+message is an example of real message sent by PANTHORA.
+
+.. code-block:: shell
+
+    {
+        "<gateway_mac_address>": {
+            "FirmwareUpload": {
+                "sensorName": "Sensor01", 	
+                "firmwareStatusCode": 0,
+                "firmwareStatusText": " Firmware Rejected",
+            }
+        }
+    }
+
+
+The following table descibes the status values.
+    
+.. list-table::
+   :widths: 50 50
+   :header-rows: 1
+
+   * - sensorStatusCode
+     - sensorStatusText
+   * - 0
+     - "Firmware Rejected"
+   * - 1
+     - "Firmware Approved"
+   * - 2
+     - "Starting Firmware Upload"
+   * - 3
+     - "Firmware Upload completed successfully"
+   * - 4
+     - "Firmware Upload not completed"
+
 
 Southbound Package
 ------------------
@@ -130,6 +171,55 @@ The message format sent by southbound dispatcher is the following:
         }, 
         "sensor_id": "<gateway_mac_address>"
     }
+
+Local storage
+-------------
+
+Starting, with the configuration option **dispatcher.database** we choose the database where the sensor message are stored locally to the
+**Fog Node**, at last with **dispatcher.table** we selecting the name of serie.
+
+
+The following snippet is an example of logs stored at Local Storage (InfluxDB).
+
+.. code-block:: shell
+    
+    {
+        "results": [
+            {
+                "statement_id": 0,
+                "series": [
+                    {
+                        "name": "message",
+                        "columns": [
+                            "time",
+                            "Humitidy",
+                            "Temperature",
+                            "sensor_id"
+                        ],
+                        "values": [
+                            [
+                                "2019-04-15T12:31:06.517926912Z",
+                                null,
+                                19.689,
+                                "device_52806c75c3fd_Sensor05"
+                            ],
+                            [
+                                "2019-04-15T13:23:12.738425856Z",
+                                null,
+                                19.27,
+                                "device_52806c75c3fd_Sensor05"
+                            ]
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+
+
+Read more about the format of InfluxDB response here_.
+
+On each observation we tag it with the sensor id origin id.
 
 Alerts
 ------
@@ -299,3 +389,5 @@ This package was created with [Cookiecutter](https://github.com/audreyr/cookiecu
 
 .. |epl| image:: https://img.shields.io/badge/License-EPL-green.svg
 .. _epl: https://opensource.org/licenses/EPL-1.0
+
+.. _here: https://docs.influxdata.com/influxdb/v1.7/query_language/data_exploration/
