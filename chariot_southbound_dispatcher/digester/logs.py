@@ -10,7 +10,7 @@ import logging
 
 from chariot_base.datasource import LocalDataSource
 from chariot_base.utilities import Tracer, open_config_file, HealthCheck
-from chariot_base.model import Alert, DataPointFactory, UnAuthenticatedSensor
+from chariot_base.model import Alert, DataPointFactory, UnAuthenticatedSensor, FirmwareUploadException, FirmwareUpdateStatus
 from chariot_base.connector import WatsonConnector, LocalConnector, create_client
 
 
@@ -21,6 +21,9 @@ class LogDigester(LocalConnector):
         self.connector = None
         self.point_factory = DataPointFactory(
             options['database'], options['table'])
+        self.firmware_upload_table = 'firmwareupload'
+        self.point_factory.set_firmware_upload_table(self.firmware_upload_table)
+        self.db = options['database']
         self.local_storage = None
         self.tracer = None
         self.northbound = None
@@ -55,7 +58,8 @@ class LogDigester(LocalConnector):
                     self.forward_to_engines(point, topic, point_span)
                     self.store_to_global(point, point_span)
                     self.set_tag(point_span, 'is_ok', True)
-                except:
+                except Exception as ex:
+                    print(ex)
                     self.set_tag(point_span, 'is_ok', False)
                     self.error(span, ex, False)
                 self.close_span(point_span)
@@ -152,13 +156,22 @@ class LogDigester(LocalConnector):
                 self.inject_to_message(span, alert.dict())))
             logging.debug('UnAuthenticatedSensor %s' % ex.id)
             return []
+        except FirmwareUploadException as firmware_ex:
+            alert_msg = 'Firmware update for sensor \'%s\' is failed' % firmware_ex.key
+            alert = Alert('firmware_upload_exception', alert_msg, 100)
+            alert.sensor_id = firmware_ex.key
+            self.northbound.publish('alerts', json.dumps(
+                self.inject_to_message(span, alert.dict())))
+            logging.debug('FirmwareUploadException %s' % firmware_ex.key)
+            point = FirmwareUpdateStatus(self.db, self.firmware_upload_table, firmware_ex.point)
+            point.id = str(point.id)
+            point.sensor_id = firmware_ex.key
+            return [point]
 
-        i = 0
         for point in points:
             point.id = str(point.id)
             if point.sensor_id is None:
                 point.sensor_id = topic
-            i = i + 1
 
         return points
 
