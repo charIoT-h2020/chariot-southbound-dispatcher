@@ -39,13 +39,14 @@ class LogDigester(LocalConnector):
         if 'engines' not in options:
             raise Exception('engines is missing')
 
-    def on_message(self, client, topic, payload, qos, properties):        
+    def on_message(self, client, topic, payload, qos, properties):
         if topic == self.healthTopic:
             self.health.do(payload)
             return
 
         span = self.start_span('on_message')
         try:
+            logging.debug(f'{topic} {payload}')
             points = self.to_data_point(payload, topic, span)
 
             for point in points:
@@ -162,6 +163,7 @@ class LogDigester(LocalConnector):
             alert.sensor_id = firmware_ex.key
             self.northbound.publish('alerts', json.dumps(
                 self.inject_to_message(span, alert.dict())))
+            self.northbound.publish('firmware', message)
             logging.debug('FirmwareUploadException %s' % firmware_ex.key)
             point = FirmwareUpdateStatus(self.db, self.firmware_upload_table, firmware_ex.point)
             point.id = str(point.id)
@@ -172,6 +174,11 @@ class LogDigester(LocalConnector):
             point.id = str(point.id)
             if point.sensor_id is None:
                 point.sensor_id = topic
+            logging.debug(type(point))
+            if type(point) == 'FirmwareUpdateStatus':
+                logging.debug(point.message)
+                self.northbound.publish('firmware', json.dumps(point.message))
+
 
         return points
 
