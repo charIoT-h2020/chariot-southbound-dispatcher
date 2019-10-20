@@ -175,8 +175,9 @@ class LogDigester(LocalConnector):
             if point.sensor_id is None:
                 point.sensor_id = topic
 
-            logging.debug(type(point))
-            if type(point) == 'FirmwareUpdateStatus':
+            logging.debug(f'{type(point)} {type(point) == FirmwareUpdateStatus}')
+            if type(point) == FirmwareUpdateStatus:
+                logging.debug(f'{json.dumps(point.message)}')
                 self.northbound.publish('firmware', json.dumps(point.message))
         return points
 
