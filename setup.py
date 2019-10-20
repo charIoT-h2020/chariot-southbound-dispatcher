@@ -17,7 +17,7 @@ requirements = [
     'cloudant',
     'ibmiotf',
     'jaeger-client',
-    'chariot_base==0.9.6',
+    'chariot_base==0.11.0',
     'gmqtt'
 ]
 
