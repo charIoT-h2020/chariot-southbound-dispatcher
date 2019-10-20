@@ -170,14 +170,14 @@ class LogDigester(LocalConnector):
             point.sensor_id = firmware_ex.key
             return [point]
 
-        logging.debug(type(point))
-        if type(point) == 'FirmwareUpdateStatus':
-            self.northbound.publish('firmware', json.dumps(point.message))
-        else:
-            for point in points:
-                point.id = str(point.id)
-                if point.sensor_id is None:
-                    point.sensor_id = topic
+        for point in points:
+            point.id = str(point.id)
+            if point.sensor_id is None:
+                point.sensor_id = topic
+
+            logging.debug(type(point))
+            if type(point) == 'FirmwareUpdateStatus':
+                self.northbound.publish('firmware', json.dumps(point.message))
         return points
 
     def get_sensor_info(self, topic):
