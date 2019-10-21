@@ -39,7 +39,7 @@
             "endpoint": "dispatcher/_health"
         },
         "gateways_ids": { 
-            "iot-2/evt/nms_status/fmt/json": "5410ec4d1601"
+            "iot-2/evt/nms_status/fmt/json": "NMS_801F122F1194"
         },
         "engines": [
             "privacy",
