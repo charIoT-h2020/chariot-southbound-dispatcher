@@ -126,10 +126,10 @@ message is an example of real message sent by PANTHORA.
 
     {
         "<gateway_mac_address>": {
-            "FirmwareUpload": {
+            "ftpFwUpd": {
                 "sensorName": "Sensor01", 	
-                "firmwareStatusCode": 0,
-                "firmwareStatusText": " Firmware Rejected",
+                "ftpFwUpdEventCode": 0,
+                "ftpFwUpdStatusText": " Firmware Rejected",
             }
         }
     }
