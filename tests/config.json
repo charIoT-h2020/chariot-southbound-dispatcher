@@ -50,7 +50,12 @@
         ],
         "database": "fog_logs",
         "table": "message",
-        "listen": "dispatcher/#"
+        "listen": "dispatcher/#",
+        "topology": {
+            "enabled": true,
+            "zone": "unkown",
+            "iotl_url": "http://localhost:5000/api/v1.0"
+        }
     },
     "tracer" : {
         "host": "linux.machine",

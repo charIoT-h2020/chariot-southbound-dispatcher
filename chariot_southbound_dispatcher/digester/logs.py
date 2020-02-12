@@ -7,6 +7,7 @@ import gmqtt
 import asyncio
 import signal
 import logging
+import requests
 
 from chariot_base.datasource import LocalDataSource
 from chariot_base.utilities import Tracer, open_config_file, HealthCheck
@@ -27,6 +28,8 @@ class LogDigester(LocalConnector):
         self.local_storage = None
         self.tracer = None
         self.northbound = None
+        self.session = requests.Session()
+        self.session.trust_env = False
 
         if 'health' in options:
             logging.info('Enabling health checks endpoints')
@@ -48,7 +51,6 @@ class LogDigester(LocalConnector):
         try:
             logging.debug(f'{topic} {payload}')
             points = self.to_data_point(payload, topic, span)
-
             for point in points:
                 point_span = self.start_span('handle_measurement', span)
                 self.set_tag(point_span, 'topic', topic)
@@ -57,6 +59,7 @@ class LogDigester(LocalConnector):
                 try:
                     self.store_to_local(point, point_span)
                     self.forward_to_engines(point, topic, point_span)
+                    self.report_device(point, topic, point_span)
                     self.store_to_global(point, point_span)
                     self.set_tag(point_span, 'is_ok', True)
                 except Exception as ex:
@@ -188,6 +191,37 @@ class LogDigester(LocalConnector):
             return 0, self.gateways_ids[topic]
         else:
             return 1, topic
+
+    def report_device(self, point, topic, child_span):
+        if not self.options['topology']['enabled']:
+            return
+
+        try:
+            span = self.start_span('report_device', child_span)
+            self.set_tag(span, 'sensor_id', point.sensor_id)
+            self.set_tag(span, 'package_id', point.id)
+
+            url = f"{self.options['topology']['iotl_url']}/devices/sensor/{point.sensor_id}"
+            headers = self.inject_to_request_header(span, url)
+            result = self.session.get(url, headers=headers)
+
+            if result.status_code == 404:
+                logging.debug(f'New sensor is detected {point.sensor_id}')
+                url = f"{self.options['topology']['iotl_url']}/iotl/command"
+                headers = self.inject_to_request_header(span, url)
+                headers['accept'] = 'application/json'
+                headers['Content-Type'] = 'application/json'
+                payload = {
+                    "command_text": f"define SENSOR {point.sensor_id}"
+                }
+                result = requests.post(url, json=payload, headers=headers)
+                logging.debug(f'Add new sensor returns: {result.json()["result"]}')
+
+            self.close_span(span)
+        except:
+            self.set_tag(span, 'is_ok', False)
+            self.close_span(span)
+            raise
 
 
 class NorthboundConnector(LocalConnector):
