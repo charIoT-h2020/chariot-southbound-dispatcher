@@ -5,13 +5,16 @@
         "orgId": "jv8w5u"
     },
     "watson_iot": {
-        "enabled": false,
+        "enabled": true,
         "client": {
-            "org": "jv8w5u",
-            "type": "gateway",
-            "id": "testing",
-            "auth-method": "token",
-            "auth-token": "Q(lB@aTQ+hm@AVrdw!"
+            "identity": {
+                "orgId": "1ji6qy",
+                "typeId": "southbound-dispatcher",
+                "deviceId": "development-home"
+            },
+            "auth": {
+                "token": "Pv1yD7N(SO5ONc3J9S"
+            }
         }
     },
     "local_storage": {
