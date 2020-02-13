@@ -10,7 +10,7 @@ import logging
 import requests
 
 from chariot_base.datasource import LocalDataSource
-from chariot_base.utilities import Tracer, open_config_file, HealthCheck
+from chariot_base.utilities import Tracer, open_config_file, HealthCheck, Topology
 from chariot_base.model import Alert, DataPointFactory, UnAuthenticatedSensor, FirmwareUploadException, FirmwareUpdateStatus
 from chariot_base.connector import WatsonConnector, LocalConnector, create_client
 
@@ -41,6 +41,10 @@ class LogDigester(LocalConnector):
 
         if 'engines' not in options:
             raise Exception('engines is missing')
+
+        self.topology = None
+        if self.options['topology']['enabled']:
+            self.topology = Topology(self.options['topology']['iotl_url'], self.tracer)
 
     def on_message(self, client, topic, payload, qos, properties):
         if topic == self.healthTopic:
@@ -143,6 +147,7 @@ class LogDigester(LocalConnector):
     def set_up_tracer(self, options):
         self.tracer = Tracer(options)
         self.tracer.init_tracer()
+        self.topology.tracer = self.tracer
 
     def set_up_local_storage(self, options):
         self.local_storage = LocalDataSource(
@@ -171,6 +176,7 @@ class LogDigester(LocalConnector):
             point = FirmwareUpdateStatus(self.db, self.firmware_upload_table, firmware_ex.point)
             point.id = str(point.id)
             point.sensor_id = firmware_ex.key
+            point.gateway = firmware_ex.gateway
             return [point]
 
         for point in points:
@@ -193,29 +199,12 @@ class LogDigester(LocalConnector):
             return 1, topic
 
     def report_device(self, point, topic, child_span):
-        if not self.options['topology']['enabled']:
-            return
-
         try:
             span = self.start_span('report_device', child_span)
             self.set_tag(span, 'sensor_id', point.sensor_id)
             self.set_tag(span, 'package_id', point.id)
-
-            url = f"{self.options['topology']['iotl_url']}/devices/sensor/{point.sensor_id}"
-            headers = self.inject_to_request_header(span, url)
-            result = self.session.get(url, headers=headers)
-
-            if result.status_code == 404:
-                logging.debug(f'New sensor is detected {point.sensor_id}')
-                url = f"{self.options['topology']['iotl_url']}/iotl/command"
-                headers = self.inject_to_request_header(span, url)
-                headers['accept'] = 'application/json'
-                headers['Content-Type'] = 'application/json'
-                payload = {
-                    "command_text": f"define SENSOR {point.sensor_id}"
-                }
-                result = requests.post(url, json=payload, headers=headers)
-                logging.debug(f'Add new sensor returns: {result.json()["result"]}')
+            logging.debug(f'GW {point.gateway}')
+            self.topology.report_new_sensor(point, span)
 
             self.close_span(span)
         except:
