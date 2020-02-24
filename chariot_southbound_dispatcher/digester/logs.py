@@ -163,16 +163,16 @@ class LogDigester(LocalConnector):
             alert.sensor_id = ex.id
             self.northbound.publish('alerts', json.dumps(
                 self.inject_to_message(span, alert.dict())))
-            logging.debug('UnAuthenticatedSensor %s' % ex.id)
+            logging.debug(f'UnAuthenticatedSensor {ex.id}')
             return []
         except FirmwareUploadException as firmware_ex:
-            alert_msg = 'Firmware update for sensor \'%s\' is failed' % firmware_ex.key
+            alert_msg = f'Firmware update for sensor \'{firmware_ex.key}\' is failed'
             alert = Alert('firmware_upload_exception', alert_msg, 100)
             alert.sensor_id = firmware_ex.key
             self.northbound.publish('alerts', json.dumps(
                 self.inject_to_message(span, alert.dict())))
             self.northbound.publish('firmware', message)
-            logging.debug('FirmwareUploadException %s' % firmware_ex.key)
+            logging.debug(f'FirmwareUploadException {firmware_ex.key}')
             point = FirmwareUpdateStatus(self.db, self.firmware_upload_table, firmware_ex.point)
             point.id = str(point.id)
             point.sensor_id = firmware_ex.key
