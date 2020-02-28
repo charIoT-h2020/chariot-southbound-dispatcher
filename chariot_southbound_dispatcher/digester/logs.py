@@ -150,6 +150,7 @@ class LogDigester(LocalConnector):
         self.topology.tracer = self.tracer
 
     def set_up_local_storage(self, options):
+        options['database'] = self.db
         self.local_storage = LocalDataSource(
             **options
         )
