@@ -151,7 +151,7 @@ class LogDigester(LocalConnector):
 
     def set_up_local_storage(self, options):
         self.local_storage = LocalDataSource(
-            options['host'], options['port'], options['username'], options['password'], options['database']
+            **options
         )
 
     def to_data_point(self, message, topic, span=None):

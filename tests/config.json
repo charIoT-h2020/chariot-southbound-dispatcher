@@ -18,8 +18,9 @@
         }
     },
     "local_storage": {
-        "host": "linux.machine",
-        "port": 8086,
+        "host": "192.168.183.128",
+        "path": "storage",
+        "port": 80,
         "username": "root",
         "password": "root",
         "database": "fog_logs"
