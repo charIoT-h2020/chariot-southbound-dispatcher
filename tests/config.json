@@ -60,8 +60,7 @@
     "tracer" : {
         "host": "linux.machine",
         "enabled": true,
-        "port": 5775,
-        "service": "southbound-dispatcher"
+        "port": 5775
     },
     "logging": {
         "version": 1,

@@ -13,7 +13,7 @@ from chariot_base.datasource import LocalDataSource
 from chariot_base.utilities import Tracer, open_config_file, HealthCheck, Topology
 from chariot_base.model import Alert, DataPointFactory, UnAuthenticatedSensor, FirmwareUploadException, FirmwareUpdateStatus
 from chariot_base.connector import WatsonConnector, LocalConnector, create_client
-
+from chariot_southbound_dispatcher import __version__, __service_name__
 
 class LogDigester(LocalConnector):
     def __init__(self, options):
@@ -246,7 +246,9 @@ async def main(args=None):
     logger.set_up_local_storage(options_db)
     logger.register_northbound(northbound)
     if options_tracer['enabled'] is True:
-        logging.info('Enabling tracing')
+        service_name = f'{__service_name__}_{__version__}'
+        options_tracer['service'] = service_name
+        logging.info(f'Enabling tracing for service "{service_name}"')
         logger.set_up_tracer(options_tracer)
         northbound.inject_tracer(logger.tracer)
     if options_watson['enabled'] is True:
