@@ -1,9 +1,10 @@
-FROM python:3.6-alpine
+FROM registry.gitlab.com/chariot-h2020/chariot_base:latest
+
 VOLUME ["/usr/src/app"]
 WORKDIR /usr/src/app
 
 # Bundle app source
 COPY . .
 
-RUN apk add gnupg gcc g++ make python3-dev libffi-dev openssl-dev gmp-dev && pip install pytest && python setup.py install
+RUN python setup.py install
 CMD ["python", "./chariot_southbound_dispatcher/digester/logs.py"]
