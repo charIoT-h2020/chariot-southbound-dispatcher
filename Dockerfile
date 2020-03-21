@@ -6,5 +6,5 @@ WORKDIR /usr/src/app
 # Bundle app source
 COPY . .
 
-RUN python setup.py install
+RUN pip install uvloop && pip install gmqtt -U && python setup.py install
 CMD ["python", "./chariot_southbound_dispatcher/digester/logs.py"]

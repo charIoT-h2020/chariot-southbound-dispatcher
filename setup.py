@@ -13,7 +13,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [
     'paho-mqtt',
-    'gmqtt',
+    'gmqtt==0.6.3',
     'influxdb',
     'cloudant',
     'wiotp-sdk',

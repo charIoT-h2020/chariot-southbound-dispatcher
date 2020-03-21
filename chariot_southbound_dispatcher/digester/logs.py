@@ -8,12 +8,15 @@ import asyncio
 import signal
 import logging
 import requests
+import uvloop
 
 from chariot_base.datasource import LocalDataSource
 from chariot_base.utilities import Tracer, open_config_file, HealthCheck, Topology
 from chariot_base.model import Alert, DataPointFactory, UnAuthenticatedSensor, FirmwareUploadException, FirmwareUpdateStatus
 from chariot_base.connector import WatsonConnector, LocalConnector, create_client
 from chariot_southbound_dispatcher import __version__, __service_name__
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 class LogDigester(LocalConnector):
     def __init__(self, options):
@@ -47,6 +50,7 @@ class LogDigester(LocalConnector):
             self.topology = Topology(self.options['topology']['iotl_url'], self.tracer)
 
     def on_message(self, client, topic, payload, qos, properties):
+        logging.debug(f'ERROR: {client._client_id}')
         if topic == self.healthTopic:
             self.health.do(payload)
             return
@@ -246,6 +250,7 @@ async def main(args=None):
     logger.register_for_client(client_south)
     logger.set_up_local_storage(options_db)
     logger.register_northbound(northbound)
+
     if options_tracer['enabled'] is True:
         service_name = f'{__service_name__}_{__version__}'
         options_tracer['service'] = service_name
@@ -256,14 +261,20 @@ async def main(args=None):
         logging.info('Enabling watson forwarding')
         logger.set_up_watson(options_watson['client'])
 
-    logger.subscribe(options_dispatcher['listen'], qos=2)
-
+    topics = [options_dispatcher['listen']]
     for key, value in options_dispatcher['gateways_ids'].items():
-        logger.subscribe(key, qos=2)
+        topics.append(key)
 
+    subscriptions = []
+    for topic in topics:
+        subscriptions.append(gmqtt.Subscription(topic, qos=2))
+
+    logger.client.subscribe(subscriptions, subscription_identifier=1)
     logging.info('Waiting message from Gateway')
+
     await STOP.wait()
     await client_south.disconnect()
+    await client_north.disconnect()
 
 
 if __name__ == '__main__':
