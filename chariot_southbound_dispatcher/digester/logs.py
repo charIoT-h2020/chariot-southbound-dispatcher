@@ -48,6 +48,7 @@ class LogDigester(LocalConnector):
         self.topology = None
         if self.options['topology']['enabled']:
             self.topology = Topology(self.options['topology']['iotl_url'], self.tracer)
+        self.topics = []
 
     def on_message(self, client, topic, payload, qos, properties):
         logging.debug(f'ERROR: {client._client_id}')
@@ -217,6 +218,24 @@ class LogDigester(LocalConnector):
             self.close_span(span)
             raise
 
+    def on_connect(self, client, flags, rc, properties=None):
+        self.connected = True
+        self.connack = (flags, rc, properties)
+        logging.info(self.connack)
+
+        if rc == 0:
+            self.subscribe_to_topics()
+
+
+    def set_topics(self, topics):
+        self.topics = topics
+
+    def subscribe_to_topics(self):
+        subscriptions = []
+        for topic in self.topics:
+            subscriptions.append(gmqtt.Subscription(topic, qos=2))
+        self.client.subscribe(subscriptions, subscription_identifier=1)
+        logging.info('Waiting message from Gateway')
 
 class NorthboundConnector(LocalConnector):
     def __init__(self):
@@ -265,12 +284,8 @@ async def main(args=None):
     for key, value in options_dispatcher['gateways_ids'].items():
         topics.append(key)
 
-    subscriptions = []
-    for topic in topics:
-        subscriptions.append(gmqtt.Subscription(topic, qos=2))
-
-    logger.client.subscribe(subscriptions, subscription_identifier=1)
-    logging.info('Waiting message from Gateway')
+    logger.set_topics(topics)
+    logger.subscribe_to_topics()
 
     await STOP.wait()
     await client_south.disconnect()
