@@ -177,7 +177,10 @@ class LogDigester(LocalConnector):
             alert.sensor_id = firmware_ex.key
             self.northbound.publish('alerts', json.dumps(
                 self.inject_to_message(span, alert.dict())))
-            self.northbound.publish('firmware', message)
+            message = json.loads(message)
+            old_name = list(message.keys())[0]
+            message[firmware_ex.key] = message.pop(old_name)
+            self.northbound.publish('firmware', json.dumps(message))
             logging.debug(f'FirmwareUploadException {firmware_ex.key}')
             point = FirmwareUpdateStatus(self.db, self.firmware_upload_table, firmware_ex.point)
             point.id = str(point.id)
@@ -192,8 +195,9 @@ class LogDigester(LocalConnector):
 
             logging.debug(f'{type(point)} {type(point) == FirmwareUpdateStatus}')
             if type(point) == FirmwareUpdateStatus:
-                logging.debug(f'{json.dumps(point.message)}')
-                self.northbound.publish('firmware', json.dumps(point.message))
+                logging.error(f'{json.dumps(point.sensor_id)} -> {json.dumps(point.message)}')
+                message = { point.sensor_id: point.message }
+                self.northbound.publish('firmware', json.dumps(message))
         return points
 
     def get_sensor_info(self, topic):
